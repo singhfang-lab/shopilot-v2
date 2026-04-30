@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>商户助手 — 设置你的商家</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #003178;
+      --accent: #2563eb;
+      --bg: #f0f4ff;
+      --card: #ffffff;
+      --surface-low: #f8faff;
+      --border: #e2e8f0;
+      --border-focus: #93c5fd;
+      --text: #1a1d1e;
+      --text-muted: #64748b;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,49,120,0.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px 64px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(37,99,235,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,49,120,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* ── Logo ── */
+    .logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 32px;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 6px 20px rgba(0,49,120,0.25);
+    }
+
+    .logo-name {
+      font-family: 'Manrope', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .logo-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+
+    .progress-step {
+      flex: 1;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background 0.3s ease;
+    }
+
+    .progress-step.active { background: var(--accent); }
+    .progress-step.done { background: #22c55e; }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .card-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    /* ── Step screens ── */
+    .step { display: none; }
+    .step.active { display: block; }
+
+    /* ── Type selection ── */
+    .type-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .type-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--surface-low);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+
+    .type-btn:hover {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+
+    .type-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: #eff6ff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .type-label { font-weight: 600; font-size: 15px; color: var(--text); margin-bottom: 2px; }
+    .type-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+    /* ── Search ── */
+    .search-box {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px 12px 40px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      background: var(--surface-low);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-loading {
+      text-align: center;
+      padding: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .search-results {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .result-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface-low);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .result-item:hover {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+
+    .result-photo {
+      width: 44px; height: 44px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+
+    .result-photo-placeholder {
+      width: 44px; height: 44px;
+      border-radius: 8px;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .result-info { flex: 1; min-width: 0; }
+    .result-name { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+    .result-meta { font-size: 12px; color: var(--text-muted); }
+    .result-addr { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+    .result-arrow { font-size: 16px; color: var(--text-muted); flex-shrink: 0; }
+
+    .no-result {
+      text-align: center;
+      padding: 20px 16px;
+      border-radius: 10px;
+      background: var(--surface-low);
+    }
+
+    .no-result-text { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    /* ── Confirm ── */
+    .confirm-card {
+      padding: 20px;
+      border-radius: 12px;
+      background: var(--surface-low);
+      border: 1.5px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .confirm-photo {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+
+    .confirm-name {
+      font-family: 'Manrope', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .confirm-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .confirm-badge {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .confirm-addrs {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── New brand ── */
+    .field-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .field-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      background: var(--surface-low);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      margin-bottom: 16px;
+    }
+
+    .field-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
+    }
+
+    /* ── Generating ── */
+    .gen-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .gen-text-preview {
+      background: var(--surface-low);
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      max-height: 260px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 80px;
+      border: 1.5px solid var(--border);
+    }
+
+    .gen-done-icon {
+      font-size: 32px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .gen-done-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .gen-done-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .back-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0;
+      margin-bottom: 16px;
+    }
+
+    .back-btn:hover { color: var(--accent); }
+
+    .error-msg {
+      font-size: 12px;
+      color: #ef4444;
+      min-height: 16px;
+      margin-top: 4px;
+    }
+
+    .skip-link {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .skip-link a {
+      color: var(--text-muted);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .skip-link a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- Logo -->
+  <div class="logo">
+    <div class="logo-icon">🏪</div>
+    <div class="logo-name">商户助手</div>
+    <div class="logo-sub">设置你的商家，开始经营分析</div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-bar">
+    <div class="progress-step" id="prog-1"></div>
+    <div class="progress-step" id="prog-2"></div>
+    <div class="progress-step" id="prog-3"></div>
+  </div>
+
+  <!-- Card -->
+  <div class="card">
+
+    <!-- Step 1: Type -->
+    <div class="step" id="step-type">
+      <div class="card-title">你的商家是哪种情况？</div>
+      <div class="card-sub">根据你的情况，我们会帮你建立初始知识库</div>
+      <div class="type-options">
+        <button class="type-btn" onclick="selectType('existing')">
+          <div class="type-icon">🏬</div>
+          <div>
+            <div class="type-label">已有品牌在运营</div>
+            <div class="type-desc">已经有门店在营业，想获取 AI 经营分析支持</div>
+          </div>
+        </button>
+        <button class="type-btn" onclick="selectType('new')">
+          <div class="type-icon">✨</div>
+          <div>
+            <div class="type-label">新品牌 / 独立门店</div>
+            <div class="type-desc">正在筹备或刚起步，先建立基础分析框架</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2a: Existing brand search -->
+    <div class="step" id="step-search">
+      <button class="back-btn" onclick="goTo('type')">← 返回</button>
+      <div class="card-title">搜索你的品牌</div>
+      <div class="card-sub">输入品牌名，我们从 Google Maps 找到你的门店数据</div>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input
+          class="search-input"
+          id="search-input"
+          type="text"
+          placeholder="例如：Tomoro Coffee、McDonald's..."
+          autocomplete="off"
+        />
+      </div>
+      <div id="search-status"></div>
+      <div id="search-results" class="search-results"></div>
+    </div>
+
+    <!-- Step 2b: New brand name -->
+    <div class="step" id="step-new">
+      <button class="back-btn" onclick="goTo('type')">← 返回</button>
+      <div class="card-title">你的品牌叫什么？</div>
+      <div class="card-sub">输入品牌名，我们帮你建立基础分析框架</div>
+      <div class="field-label">品牌名称 *</div>
+      <input class="field-input" id="new-brand-input" type="text" placeholder="你的品牌名称" />
+      <div id="new-brand-error" class="error-msg"></div>
+      <button class="btn-primary" onclick="confirmNewBrand()">继续 →</button>
+    </div>
+
+    <!-- Step 3: Confirm brand -->
+    <div class="step" id="step-confirm">
+      <button class="back-btn" onclick="goBackFromConfirm()">← 返回</button>
+      <div class="card-title">确认这是你的品牌？</div>
+      <div class="card-sub">确认后我们将为你生成初始知识库</div>
+      <div class="confirm-card" id="confirm-card-content"></div>
+      <button class="btn-primary" id="confirm-btn" onclick="confirmBrand()">✓ 确认，这是我的品牌</button>
+      <button class="btn-secondary" onclick="goBackFromConfirm()">不对，重新搜索</button>
+    </div>
+
+    <!-- Step 4: Generating KB -->
+    <div class="step" id="step-generating">
+      <div id="gen-loading">
+        <div class="card-title">正在生成知识库</div>
+        <div class="card-sub">AI 正在分析品牌信息，请稍候（约 30 秒）</div>
+        <div class="gen-status">
+          <div class="spinner"></div>
+          <span id="gen-status-text">正在分析品牌数据...</span>
+        </div>
+        <div class="gen-text-preview" id="gen-preview"></div>
+        <button class="btn-secondary" style="margin-top:16px" onclick="skipToMain()">跳过，直接进入</button>
+      </div>
+      <div id="gen-done" style="display:none">
+        <div class="gen-done-icon">🎉</div>
+        <div class="gen-done-title">知识库已就绪！</div>
+        <div class="gen-done-sub">已为你的品牌建立基础知识库，现在可以开始分析了</div>
+        <button class="btn-primary" onclick="goToMain()">进入主界面 →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Skip link (shown in early steps) -->
+  <div class="skip-link" id="skip-link">
+    <a onclick="skipToMain()">跳过，稍后再设置</a>
+  </div>
+
+</div>
+
+<script>
+  const API = window.location.hostname === 'localhost' ? 'http://localhost:8081' : '';
+
+  let currentType = ''; // 'existing' | 'new'
+  let selectedCandidate = null;
+  let boundMerchantId = null;
+
+  // Check auth
+  fetch(`${API}/auth/me`, { credentials: 'include' })
+    .then(r => {
+      if (!r.ok) { window.location.replace('/login.html'); return; }
+      return r.json();
+    })
+    .then(data => {
+      if (!data) return;
+      // If already has merchant, skip to main (unless explicitly rebinding)
+      const isRebind = new URLSearchParams(location.search).get('rebind');
+      if (data.merchant && !isRebind) {
+        window.location.replace('/index.html');
+      }
+    })
+    .catch(() => window.location.replace('/login.html'));
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  function goTo(step) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + step).classList.add('active');
+    updateProgress(step);
+    const skipLink = document.getElementById('skip-link');
+    skipLink.style.display = (step === 'generating') ? 'none' : '';
+  }
+
+  function updateProgress(step) {
+    const map = { type: 0, search: 1, new: 1, confirm: 2, generating: 3 };
+    const active = map[step] || 0;
+    [1, 2, 3].forEach(i => {
+      const el = document.getElementById(`prog-${i}`);
+      el.className = 'progress-step' + (i - 1 < active ? ' done' : (i - 1 === active ? ' active' : ''));
+    });
+  }
+
+  function selectType(type) {
+    currentType = type;
+    if (type === 'existing') {
+      goTo('search');
+      setTimeout(() => document.getElementById('search-input').focus(), 50);
+    } else {
+      goTo('new');
+      setTimeout(() => document.getElementById('new-brand-input').focus(), 50);
+    }
+  }
+
+  function goBackFromConfirm() {
+    if (currentType === 'existing') goTo('search');
+    else goTo('new');
+  }
+
+  // ── Search ────────────────────────────────────────────────────────────────
+
+  let searchTimer = null;
+  document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('search-input');
+    if (inp) {
+      inp.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        const q = inp.value.trim();
+        if (q.length < 1) {
+          document.getElementById('search-results').innerHTML = '';
+          document.getElementById('search-status').innerHTML = '';
+          return;
+        }
+        searchTimer = setTimeout(() => doSearch(q), 400);
+      });
+    }
+  });
+
+  async function doSearch(q) {
+    document.getElementById('search-status').innerHTML = '<div class="search-loading">搜索中...</div>';
+    document.getElementById('search-results').innerHTML = '';
+    try {
+      const res = await fetch(`${API}/onboarding/search?q=${encodeURIComponent(q)}`, {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      renderResults(data.candidates || [], q);
+    } catch {
+      document.getElementById('search-status').innerHTML = '<div class="search-loading">搜索失败，请重试</div>';
+    }
+  }
+
+  function renderResults(candidates, q) {
+    document.getElementById('search-status').innerHTML = '';
+    const container = document.getElementById('search-results');
+    if (!candidates.length) {
+      container.innerHTML = `
+        <div class="no-result">
+          <div class="no-result-text">没有找到「${q}」相关品牌</div>
+          <button class="link-btn" onclick="useAsNewBrand('${q.replace(/'/g, "\\'")}')">以新品牌继续 →</button>
+        </div>`;
+      return;
+    }
+    container.innerHTML = candidates.map((c, i) => `
+      <div class="result-item" onclick="selectCandidate(${i})">
+        ${c.photo_url
+          ? `<img class="result-photo" src="${c.photo_url}" alt="${c.name}" onerror="this.style.display='none'" />`
+          : `<div class="result-photo-placeholder">🏪</div>`}
+        <div class="result-info">
+          <div class="result-name">${c.name}${c.store_count > 1 ? ` <span style="font-weight:400;color:var(--text-muted);font-size:12px">(连锁)</span>` : ''}</div>
+          <div class="result-meta">${c.rating > 0 ? `⭐ ${c.rating.toFixed(1)}` : ''}${c.review_count > 0 ? ` · ${c.review_count.toLocaleString()} 评价` : ''}${c.store_count > 1 ? ` · ${c.store_count} 家门店` : ''}</div>
+          ${c.addresses && c.addresses[0] ? `<div class="result-addr">📍 ${c.addresses[0]}</div>` : ''}
+        </div>
+        <div class="result-arrow">›</div>
+      </div>
+    `).join('');
+    // Store candidates globally for selection
+    window._searchCandidates = candidates;
+  }
+
+  function selectCandidate(idx) {
+    selectedCandidate = (window._searchCandidates || [])[idx];
+    if (!selectedCandidate) return;
+    showConfirm(selectedCandidate);
+  }
+
+  function useAsNewBrand(name) {
+    currentType = 'new';
+    document.getElementById('new-brand-input').value = name;
+    goTo('new');
+  }
+
+  // ── New brand ─────────────────────────────────────────────────────────────
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('new-brand-input');
+    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') confirmNewBrand(); });
+  });
+
+  function confirmNewBrand() {
+    const name = document.getElementById('new-brand-input').value.trim();
+    if (!name) { document.getElementById('new-brand-error').textContent = '请输入品牌名称'; return; }
+    selectedCandidate = { name, place_ids: [], store_count: 1, rating: 0, review_count: 0, addresses: [], merchant_type: 'new' };
+    showConfirm(selectedCandidate);
+  }
+
+  // ── Confirm ───────────────────────────────────────────────────────────────
+
+  function showConfirm(c) {
+    const el = document.getElementById('confirm-card-content');
+    const isNew = currentType === 'new' || c.merchant_type === 'new';
+    let html = '';
+    if (c.photo_url) html += `<img class="confirm-photo" src="${c.photo_url}" alt="${c.name}" onerror="this.remove()" />`;
+    html += `<div class="confirm-name">${c.name}</div>`;
+    html += `<div class="confirm-meta">`;
+    if (c.rating > 0) html += `<span class="confirm-badge">⭐ ${c.rating.toFixed(1)}</span>`;
+    if (c.review_count > 0) html += `<span class="confirm-badge">${c.review_count.toLocaleString()} 评价</span>`;
+    if (c.store_count > 1) html += `<span class="confirm-badge">🏪 ${c.store_count} 家门店</span>`;
+    if (c.chain_kb && c.chain_kb.category) html += `<span class="confirm-badge">${c.chain_kb.category}</span>`;
+    if (c.chain_kb && c.chain_kb.priceBand) html += `<span class="confirm-badge">${c.chain_kb.priceBand}</span>`;
+    if (isNew) html += `<span class="confirm-badge">新品牌</span>`;
+    html += `</div>`;
+    if (c.addresses && c.addresses.length > 0) {
+      html += `<div class="confirm-addrs">` + c.addresses.slice(0, 2).map(a => `📍 ${a}`).join('<br>') + `</div>`;
+    }
+    el.innerHTML = html;
+    goTo('confirm');
+  }
+
+  async function confirmBrand() {
+    const btn = document.getElementById('confirm-btn');
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+    try {
+      const c = selectedCandidate;
+      const res = await fetch(`${API}/onboarding/bind`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: c.name,
+          place_ids: c.place_ids || [],
+          store_count: c.store_count || 1,
+          rating: c.rating || 0,
+          review_count: c.review_count || 0,
+          addresses: c.addresses || [],
+          chain_kb: c.chain_kb || null,
+          merchant_type: currentType,
+        }),
+      });
+      if (!res.ok) {
+        alert('绑定失败，请重试');
+        btn.disabled = false;
+        btn.textContent = '✓ 确认，这是我的品牌';
+        return;
+      }
+      const data = await res.json();
+      boundMerchantId = data.merchant_id;
+    } catch {
+      alert('网络错误，请重试');
+      btn.disabled = false;
+      btn.textContent = '✓ 确认，这是我的品牌';
+      return;
+    }
+
+    goTo('generating');
+    startGenerateKB();
+  }
+
+  // ── Generate KB ──────────────────────────────────────────────────────────
+
+  async function startGenerateKB() {
+    if (!boundMerchantId || !selectedCandidate) { goToMain(); return; }
+
+    const previewEl = document.getElementById('gen-preview');
+    const statusEl = document.getElementById('gen-status-text');
+
+    try {
+      const res = await fetch(`${API}/onboarding/generate-kb`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          merchant_id: boundMerchantId,
+          brand_name: selectedCandidate.name,
+          merchant_type: currentType,
+          chain_kb: selectedCandidate.chain_kb || null,
+        }),
+      });
+
+      if (!res.ok || !res.body) { goToMain(); return; }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '', eventName = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() || '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) { eventName = line.slice(7).trim(); continue; }
+          if (line.startsWith('data: ')) {
+            try {
+              const payload = JSON.parse(line.slice(6));
+              if (eventName === 'status') {
+                statusEl.textContent = payload.msg;
+              } else if (eventName === 'chunk') {
+                previewEl.textContent += payload.text;
+                previewEl.scrollTop = previewEl.scrollHeight;
+              } else if (eventName === 'done') {
+                showGenDone();
+              } else if (eventName === 'error') {
+                statusEl.textContent = payload.msg;
+                setTimeout(goToMain, 2000);
+              }
+            } catch {}
+          }
+        }
+      }
+    } catch {
+      goToMain();
+    }
+  }
+
+  function showGenDone() {
+    document.getElementById('gen-loading').style.display = 'none';
+    document.getElementById('gen-done').style.display = 'block';
+  }
+
+  function goToMain() {
+    window.location.replace('/index.html');
+  }
+
+  function skipToMain() {
+    window.location.replace('/index.html?skip_onboarding=1');
+  }
+
+  // Init
+  goTo('type');
+</script>
+</body>
+</html>

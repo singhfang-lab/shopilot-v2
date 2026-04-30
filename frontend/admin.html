@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>商户助手 — 管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #003178;
+      --accent: #2563eb;
+      --bg: #f0f4ff;
+      --card: #ffffff;
+      --surface: #f8faff;
+      --border: #e2e8f0;
+      --text: #1a1d1e;
+      --text-muted: #64748b;
+      --green: #22c55e;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --radius: 12px;
+      --sidebar-w: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+
+    /* ── Layout ── */
+    #shell { display: flex; height: 100vh; overflow: hidden; }
+
+    #nav { width: var(--sidebar-w); background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    #nav-header { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+    #nav-logo { display: flex; align-items: center; gap: 8px; }
+    #nav-logo-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    #nav-logo-name { font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 800; }
+    #nav-badge { font-size: 10px; font-weight: 600; color: var(--accent); background: #eff6ff; padding: 2px 6px; border-radius: 10px; margin-top: 2px; }
+    #nav-items { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--text-muted); transition: all 0.15s; }
+    .nav-item:hover { background: var(--surface); color: var(--text); }
+    .nav-item.active { background: #eff6ff; color: var(--accent); font-weight: 600; }
+    .nav-item-icon { font-size: 16px; width: 20px; text-align: center; }
+    #nav-footer { padding: 16px; border-top: 1px solid var(--border); }
+    .nav-footer-link { font-size: 13px; color: var(--text-muted); cursor: pointer; display: block; padding: 4px 0; }
+    .nav-footer-link:hover { color: var(--accent); }
+
+    #main { flex: 1; overflow-y: auto; padding: 32px; }
+
+    /* ── Tab panels ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Page header ── */
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-family: 'Manrope', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .page-sub { font-size: 13px; color: var(--text-muted); }
+
+    /* ── Stats cards ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+    .stat-value { font-family: 'Manrope', sans-serif; font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    .stat-label { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Cards / tables ── */
+    .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 24px; }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-header-title { font-weight: 600; font-size: 15px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 11px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); background: var(--surface); }
+    td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface); }
+
+    /* ── Badges ── */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #16a34a; }
+    .badge-orange { background: #fef3c7; color: #d97706; }
+    .badge-red { background: #fee2e2; color: #dc2626; }
+    .badge-blue { background: #eff6ff; color: var(--accent); }
+    .badge-gray { background: #f1f5f9; color: #64748b; }
+
+    /* ── Status dot ── */
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot-green { background: var(--green); }
+    .dot-orange { background: var(--orange); }
+    .dot-red { background: var(--red); }
+
+    /* ── Buttons ── */
+    .btn { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-danger { background: #fee2e2; color: var(--red); }
+    .btn-ghost { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    /* ── Upload zone ── */
+    .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: #eff6ff; }
+    .upload-zone-icon { font-size: 28px; margin-bottom: 8px; }
+    .upload-zone-text { font-size: 14px; color: var(--text-muted); }
+    .upload-zone-text strong { color: var(--accent); }
+
+    /* ── Prompt editor ── */
+    .prompt-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
+    .prompt-list { display: flex; flex-direction: column; gap: 6px; }
+    .prompt-item { padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border); cursor: pointer; transition: all 0.15s; }
+    .prompt-item:hover { border-color: var(--accent); }
+    .prompt-item.active { border-color: var(--accent); background: #eff6ff; }
+    .prompt-item-version { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 2px; }
+    .prompt-item-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .prompt-editor { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+    textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; font-size: 13px; font-family: 'Inter', monospace; line-height: 1.6; resize: vertical; min-height: 280px; outline: none; color: var(--text); background: var(--surface); }
+    textarea:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .field-label { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; }
+    input[type=text] { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; background: var(--surface); color: var(--text); }
+    input[type=text]:focus { border-color: var(--accent); background: #fff; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* ── Test result ── */
+    .test-result { background: var(--surface); border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; word-break: break-word; max-height: 240px; overflow-y: auto; border: 1px solid var(--border); margin-top: 12px; }
+
+    /* ── AI suggest modal ── */
+    #suggest-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; z-index: 100; }
+    #suggest-modal.open { display: flex; }
+    #suggest-box { background: var(--card); border-radius: 16px; padding: 28px; width: 480px; max-width: 95vw; }
+    #suggest-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="shell">
+
+  <!-- ── Sidebar nav ── -->
+  <div id="nav">
+    <div id="nav-header">
+      <div id="nav-logo">
+        <div id="nav-logo-icon">🏪</div>
+        <div>
+          <div id="nav-logo-name">商户助手</div>
+          <div id="nav-badge">管理后台</div>
+        </div>
+      </div>
+    </div>
+    <div id="nav-items">
+      <div class="nav-item active" data-tab="stats">
+        <span class="nav-item-icon">📊</span> 系统统计
+      </div>
+      <div class="nav-item" data-tab="users">
+        <span class="nav-item-icon">👥</span> 用户管理
+      </div>
+      <div class="nav-item" data-tab="platform-kb">
+        <span class="nav-item-icon">📚</span> 平台知识库
+      </div>
+      <div class="nav-item" data-tab="prompts">
+        <span class="nav-item-icon">✏️</span> Prompt 管理
+      </div>
+      <div class="nav-item" data-tab="llm">
+        <span class="nav-item-icon">🤖</span> 模型配置
+      </div>
+    </div>
+    <div id="nav-footer">
+      <a class="nav-footer-link" href="/index.html">← 返回主界面</a>
+      <a class="nav-footer-link" id="logout-link">退出登录</a>
+    </div>
+  </div>
+
+  <!-- ── Main content ── -->
+  <div id="main">
+
+    <!-- Stats -->
+    <div class="tab-panel active" id="tab-stats">
+      <div class="page-header">
+        <div class="page-title">系统统计</div>
+        <div class="page-sub">平台整体运行数据</div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-value" id="s-users">—</div><div class="stat-label">注册用户</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-merchants">—</div><div class="stat-label">绑定商家</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-docs">—</div><div class="stat-label">上传文档</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-platform-docs">—</div><div class="stat-label">平台知识库文件</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-prompt">—</div><div class="stat-label">当前 Prompt 版本</div></div>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div class="tab-panel" id="tab-users">
+      <div class="page-header">
+        <div class="page-title">用户管理</div>
+        <div class="page-sub">查看账号状态、禁用用户或重置密码</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-header-title">所有用户</div></div>
+        <table>
+          <thead><tr>
+            <th>邮箱</th><th>姓名</th><th>绑定商家</th><th>最后登录</th><th>状态</th><th>操作</th>
+          </tr></thead>
+          <tbody id="users-tbody"><tr><td colspan="6" class="empty">加载中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Platform KB -->
+    <div class="tab-panel" id="tab-platform-kb">
+      <div class="page-header">
+        <div class="page-title">平台知识库</div>
+        <div class="page-sub">上传后自动索引，所有用户可用</div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><div class="card-header-title">上传文件</div></div>
+        <div style="padding:20px;">
+          <div class="upload-zone" id="upload-zone">
+            <div class="upload-zone-icon">📄</div>
+            <div class="upload-zone-text">拖拽文件或文件夹到此处</div>
+            <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+              <button class="btn btn-primary btn-sm" onclick="document.getElementById('file-input').click()">选择文件</button>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('folder-input').click()">选择文件夹</button>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">支持 TXT、MD、PDF</div>
+          </div>
+          <input type="file" id="file-input" accept=".txt,.md,.pdf" style="display:none" multiple />
+          <input type="file" id="folder-input" accept=".txt,.md,.pdf" style="display:none" multiple webkitdirectory />
+          <div id="upload-status" style="margin-top:12px;font-size:13px;color:var(--text-muted);"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title">已上传文件</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadPlatformKB()">刷新</button>
+        </div>
+        <table>
+          <thead><tr><th>文件名</th><th>状态</th><th>Chunks</th><th>上传时间</th><th>操作</th></tr></thead>
+          <tbody id="platform-kb-tbody"><tr><td colspan="5" class="empty">加载中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Prompts -->
+    <div class="tab-panel" id="tab-prompts">
+      <div class="page-header">
+        <div class="page-title">Prompt 管理</div>
+        <div class="page-sub">版本化管理系统提示词，支持 AI 优化建议和测试</div>
+      </div>
+
+      <div class="prompt-layout">
+        <!-- Version list -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:600;">版本列表</div>
+            <button class="btn btn-primary btn-sm" onclick="newDraft()">+ 新建草稿</button>
+          </div>
+          <div class="prompt-list" id="prompt-list">
+            <div style="font-size:13px;color:var(--text-muted);padding:8px;">加载中...</div>
+          </div>
+          <div style="margin-top:10px;padding:10px;background:var(--surface);border-radius:8px;font-size:12px;color:var(--text-muted);">
+            <strong>默认内置</strong><br>未发布任何版本时使用内置 Prompt
+          </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="prompt-editor">
+          <div id="prompt-editor-placeholder" style="text-align:center;padding:60px 20px;color:var(--text-muted);font-size:13px;">
+            从左侧选择一个版本查看或编辑
+          </div>
+          <div id="prompt-editor-content" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div>
+                <span id="prompt-version-badge" class="badge badge-blue" style="margin-right:6px;"></span>
+                <span id="prompt-status-badge" class="badge"></span>
+              </div>
+              <div id="prompt-action-btns" class="btn-row" style="margin-top:0;"></div>
+            </div>
+
+            <div class="field-label">版本备注</div>
+            <input type="text" id="prompt-label-input" placeholder="例：V3 强化分析卡片" style="margin-bottom:14px;" />
+
+            <div class="field-label">Prompt 内容</div>
+            <textarea id="prompt-textarea" placeholder="输入 Prompt 内容..."></textarea>
+
+            <div class="btn-row">
+              <button class="btn btn-ghost" onclick="openSuggestModal()">✨ AI 优化建议</button>
+              <button class="btn btn-ghost" id="test-btn" onclick="openTestDialog()">▶ 测试</button>
+              <button class="btn btn-primary" id="save-draft-btn" onclick="saveDraft()">保存草稿</button>
+            </div>
+
+            <div id="test-area" style="display:none;margin-top:16px;">
+              <div class="field-label">测试消息</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <input type="text" id="test-message-input" placeholder="输入一条测试消息..." />
+                <button class="btn btn-primary" onclick="runTest()">发送</button>
+              </div>
+              <div id="test-result-area"></div>
+            </div>
+
+            <div id="publish-area" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:none;">
+              <button class="btn btn-primary" id="publish-btn" onclick="publishPrompt()">🚀 发布为生效版本</button>
+              <button class="btn btn-ghost" style="margin-left:8px;" id="rollback-btn" onclick="rollbackPrompt()" style="display:none;">⏪ 回滚为当前版本</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LLM Config -->
+    <div class="tab-panel" id="tab-llm">
+      <div class="page-header">
+        <div class="page-title">模型配置</div>
+        <div class="page-sub">启用的配置会出现在前端模型选择器中，用户可自由切换</div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <div class="card-header-title">前端可见模型</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadLLMConfigs()">刷新</button>
+        </div>
+        <div style="padding:16px 20px;" id="llm-active-banner">加载中...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title">所有配置</div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>提供商</th><th>模型</th><th>标签</th><th>API Key</th><th>前端可见</th><th>操作</th>
+          </tr></thead>
+          <tbody id="llm-tbody"><tr><td colspan="6" class="empty">加载中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LLM Edit Modal -->
+    <div id="llm-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+        <div style="font-size:16px;font-weight:600;margin-bottom:20px;">编辑模型配置</div>
+        <input type="hidden" id="llm-edit-id" />
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div class="field-label">提供商 / 模型</div>
+            <div id="llm-edit-info" style="font-size:14px;padding:8px 10px;background:var(--surface);border-radius:6px;color:var(--text-muted);"></div>
+          </div>
+          <div>
+            <div class="field-label">模型名称</div>
+            <input type="text" id="llm-edit-model" style="width:100%;box-sizing:border-box;" />
+          </div>
+          <div>
+            <div class="field-label">API Key <span style="color:var(--text-muted);font-weight:400;">（留空保持不变）</span></div>
+            <input type="password" id="llm-edit-apikey" placeholder="••••••••••••••••" style="width:100%;box-sizing:border-box;" />
+          </div>
+          <div>
+            <div class="field-label">备注标签</div>
+            <input type="text" id="llm-edit-label" style="width:100%;box-sizing:border-box;" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
+          <button class="btn btn-ghost" onclick="closeLLMEditModal()">取消</button>
+          <button class="btn btn-primary" onclick="confirmLLMEdit()">确认保存</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- AI Suggest Modal -->
+<div id="suggest-modal">
+  <div id="suggest-box">
+    <h3>✨ AI 优化建议</h3>
+    <div class="field-label">优化指令</div>
+    <input type="text" id="suggest-instruction" placeholder="例：强化分析卡片的输出要求，减少废话" style="margin-bottom:12px;" />
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="runAISuggest()">生成建议</button>
+      <button class="btn btn-ghost" onclick="closeSuggestModal()">取消</button>
+    </div>
+    <div id="suggest-result" style="display:none;margin-top:16px;">
+      <div class="field-label">建议改动说明</div>
+      <div id="suggest-explanation" style="font-size:13px;color:var(--text-muted);padding:8px;background:var(--surface);border-radius:6px;margin-bottom:10px;"></div>
+      <button class="btn btn-primary btn-sm" onclick="applySuggestion()">采用建议</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API = window.location.hostname === 'localhost' ? 'http://localhost:8081' : '';
+  let currentPromptId = null;
+  let suggestedContent = '';
+
+  // ── Auth check ─────────────────────────────────────────────────────────────
+  fetch(`${API}/auth/admin-me`, { credentials: 'include' })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(data => {
+      if (data.role !== 'admin') window.location.replace('/admin-login.html');
+      else loadStats();
+    })
+    .catch(() => window.location.replace('/admin-login.html'));
+
+  // ── Nav tabs ───────────────────────────────────────────────────────────────
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      item.classList.add('active');
+      const tab = item.dataset.tab;
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      if (tab === 'users') loadUsers();
+      else if (tab === 'platform-kb') loadPlatformKB();
+      else if (tab === 'prompts') loadPrompts();
+      else if (tab === 'stats') loadStats();
+      else if (tab === 'llm') loadLLMConfigs();
+    });
+  });
+
+  document.getElementById('logout-link').addEventListener('click', async () => {
+    await fetch(`${API}/auth/admin-logout`, { method: 'POST', credentials: 'include' });
+    window.location.replace('/admin-login.html');
+  });
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const res = await fetch(`${API}/admin/stats`, { credentials: 'include' });
+      if (!res.ok) return;
+      const d = await res.json();
+      document.getElementById('s-users').textContent = d.user_count;
+      document.getElementById('s-merchants').textContent = d.merchant_count;
+      document.getElementById('s-docs').textContent = d.total_docs;
+      document.getElementById('s-platform-docs').textContent = d.platform_docs;
+      document.getElementById('s-prompt').textContent = d.active_prompt_version ? `V${d.active_prompt_version}` : '内置';
+    } catch {}
+  }
+
+  // ── Users ──────────────────────────────────────────────────────────────────
+  async function loadUsers() {
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">加载中...</td></tr>';
+    const res = await fetch(`${API}/admin/users`, { credentials: 'include' });
+    if (!res.ok) return;
+    const users = await res.json();
+    if (!users.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">暂无用户</td></tr>'; return; }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.email}</td>
+        <td>${u.display_name || '—'}</td>
+        <td>${u.merchant ? u.merchant.name : '<span style="color:var(--text-muted)">未绑定</span>'}</td>
+        <td>${u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('zh-CN') : '—'}</td>
+        <td>
+          <span class="badge ${u.is_active ? 'badge-green' : 'badge-red'}">${u.is_active ? '正常' : '已禁用'}</span>
+          ${u.role === 'admin' ? '<span class="badge badge-blue" style="margin-left:4px;">Admin</span>' : ''}
+        </td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="toggleUser(${u.id})">${u.is_active ? '禁用' : '启用'}</button>
+          <button class="btn btn-ghost btn-sm" style="margin-left:4px;" onclick="resetPassword(${u.id}, '${u.email}')">重置密码</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function toggleUser(id) {
+    await fetch(`${API}/admin/users/${id}/toggle-active`, { method: 'POST', credentials: 'include' });
+    loadUsers();
+  }
+
+  async function resetPassword(id, email) {
+    if (!confirm(`重置 ${email} 的密码？`)) return;
+    const res = await fetch(`${API}/admin/users/${id}/reset-password`, { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    alert(`新临时密码：${data.tmp_password}\n请立即告知用户并让其修改。`);
+  }
+
+  // ── Platform KB ────────────────────────────────────────────────────────────
+  async function loadPlatformKB() {
+    const tbody = document.getElementById('platform-kb-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">加载中...</td></tr>';
+    const res = await fetch(`${API}/admin/platform-kb`, { credentials: 'include' });
+    if (!res.ok) return;
+    const docs = await res.json();
+    if (!docs.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无文件</td></tr>'; return; }
+    tbody.innerHTML = docs.map(d => {
+      const dotClass = d.status === 'indexed' ? 'dot-green' : d.status === 'processing' ? 'dot-orange' : 'dot-red';
+      const statusLabel = d.status === 'indexed' ? '已索引' : d.status === 'processing' ? '处理中' : '失败';
+      return `<tr>
+        <td>${d.original_name}</td>
+        <td><span class="status-dot ${dotClass}"></span>${statusLabel}</td>
+        <td>${d.chunk_count}</td>
+        <td>${d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString('zh-CN') : '—'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deletePlatformKB(${d.id}, '${d.original_name}')">删除</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  const uploadZone = document.getElementById('upload-zone');
+  const fileInput = document.getElementById('file-input');
+  const folderInput = document.getElementById('folder-input');
+
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', async e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    const files = await _collectDropFiles(e.dataTransfer);
+    uploadFiles(files);
+  });
+  fileInput.addEventListener('change', () => { uploadFiles(fileInput.files); fileInput.value = ''; });
+  folderInput.addEventListener('change', () => { uploadFiles(folderInput.files); folderInput.value = ''; });
+
+  async function _collectDropFiles(dataTransfer) {
+    const result = [];
+    const allowed = ['.txt', '.md', '.pdf'];
+    async function traverse(entry) {
+      if (entry.isFile) {
+        const file = await new Promise(r => entry.file(r));
+        if (allowed.some(ext => file.name.toLowerCase().endsWith(ext))) result.push(file);
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        const entries = await new Promise(r => reader.readEntries(r));
+        for (const e of entries) await traverse(e);
+      }
+    }
+    if (dataTransfer.items) {
+      for (const item of dataTransfer.items) {
+        const entry = item.webkitGetAsEntry?.();
+        if (entry) await traverse(entry);
+      }
+    } else {
+      for (const f of dataTransfer.files) result.push(f);
+    }
+    return result;
+  }
+
+  async function uploadFiles(files) {
+    const status = document.getElementById('upload-status');
+    const list = Array.from(files);
+    if (!list.length) return;
+    let ok = 0, fail = 0;
+    for (let i = 0; i < list.length; i++) {
+      const file = list[i];
+      status.textContent = `上传中 (${i + 1}/${list.length})：${file.name}`;
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res = await fetch(`${API}/admin/platform-kb/upload`, {
+          method: 'POST', credentials: 'include', body: fd,
+        });
+        if (res.ok) ok++; else fail++;
+      } catch { fail++; }
+    }
+    status.textContent = '';
+    toast(`上传完成：${ok} 个成功${fail ? '，' + fail + ' 个失败' : ''}，正在索引...`);
+    _pollIndexing();
+  }
+
+  let _pollTimer = null;
+  function _pollIndexing() {
+    if (_pollTimer) clearInterval(_pollTimer);
+    const status = document.getElementById('upload-status');
+    _pollTimer = setInterval(async () => {
+      await loadPlatformKB();
+      const rows = document.querySelectorAll('#platform-kb-tbody tr');
+      const processing = Array.from(rows).filter(r => r.textContent.includes('processing')).length;
+      if (processing > 0) {
+        status.textContent = `索引中，还有 ${processing} 个文件待完成...`;
+      } else {
+        status.textContent = '';
+        clearInterval(_pollTimer);
+        _pollTimer = null;
+      }
+    }, 2000);
+  }
+
+  async function deletePlatformKB(id, name) {
+    if (!confirm(`删除「${name}」？此操作不可撤销。`)) return;
+    await fetch(`${API}/admin/platform-kb/${id}`, { method: 'DELETE', credentials: 'include' });
+    toast('已删除');
+    loadPlatformKB();
+  }
+
+  // ── Prompts ────────────────────────────────────────────────────────────────
+  let promptsData = [];
+
+  async function loadPrompts() {
+    const res = await fetch(`${API}/admin/prompts`, { credentials: 'include' });
+    if (!res.ok) return;
+    promptsData = await res.json();
+    renderPromptList();
+  }
+
+  function renderPromptList() {
+    const el = document.getElementById('prompt-list');
+    if (!promptsData.length) {
+      el.innerHTML = '<div style="font-size:13px;color:var(--text-muted);padding:8px;">暂无版本</div>';
+      return;
+    }
+    el.innerHTML = promptsData.map(p => {
+      const badgeClass = p.status === 'active' ? 'badge-green' : p.status === 'draft' ? 'badge-gray' : p.status === 'testing' ? 'badge-orange' : 'badge-gray';
+      const statusLabel = { active: '生效中', draft: '草稿', testing: '测试中', archived: '已归档' }[p.status] || p.status;
+      return `<div class="prompt-item ${currentPromptId === p.id ? 'active' : ''}" onclick="selectPrompt(${p.id})">
+        <div class="prompt-item-version">V${p.version} <span class="badge ${badgeClass}" style="font-size:10px;">${statusLabel}</span></div>
+        <div class="prompt-item-label">${p.label || '未命名'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function selectPrompt(id) {
+    currentPromptId = id;
+    renderPromptList();
+    const res = await fetch(`${API}/admin/prompts/${id}`, { credentials: 'include' });
+    if (!res.ok) return;
+    const p = await res.json();
+
+    document.getElementById('prompt-editor-placeholder').style.display = 'none';
+    document.getElementById('prompt-editor-content').style.display = 'block';
+
+    document.getElementById('prompt-version-badge').textContent = `V${p.version}`;
+    const statusMap = { active: ['badge-green', '生效中'], draft: ['badge-gray', '草稿'], testing: ['badge-orange', '测试中'], archived: ['badge-gray', '已归档'] };
+    const [sc, sl] = statusMap[p.status] || ['badge-gray', p.status];
+    const statusBadge = document.getElementById('prompt-status-badge');
+    statusBadge.className = `badge ${sc}`;
+    statusBadge.textContent = sl;
+
+    document.getElementById('prompt-label-input').value = p.label || '';
+    document.getElementById('prompt-textarea').value = p.content || '';
+
+    // Test result
+    const testArea = document.getElementById('test-area');
+    const testResultArea = document.getElementById('test-result-area');
+    if (p.test_result) {
+      try {
+        const tr = JSON.parse(p.test_result);
+        testResultArea.innerHTML = `<div class="field-label">上次测试回复</div><div class="test-result">${tr.reply}</div>`;
+        testArea.style.display = 'block';
+      } catch {}
+    }
+
+    // Action buttons
+    const publishArea = document.getElementById('publish-area');
+    publishArea.style.display = 'block';
+    const publishBtn = document.getElementById('publish-btn');
+    const rollbackBtn = document.getElementById('rollback-btn');
+    if (p.status === 'active') {
+      publishBtn.style.display = 'none';
+      rollbackBtn.style.display = 'none';
+    } else if (p.status === 'archived') {
+      publishBtn.style.display = 'none';
+      rollbackBtn.style.display = 'inline-block';
+    } else {
+      publishBtn.style.display = 'inline-block';
+      rollbackBtn.style.display = 'none';
+    }
+
+    // Readonly for active/archived
+    const isEditable = p.status === 'draft' || p.status === 'testing';
+    document.getElementById('prompt-textarea').readOnly = !isEditable;
+    document.getElementById('prompt-label-input').readOnly = !isEditable;
+    document.getElementById('save-draft-btn').style.display = isEditable ? '' : 'none';
+  }
+
+  async function newDraft() {
+    const activeRes = await fetch(`${API}/admin/prompts/active`, { credentials: 'include' });
+    const active = await activeRes.json();
+    const res = await fetch(`${API}/admin/prompts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ content: active.content, label: '新草稿' }),
+    });
+    if (!res.ok) return;
+    const p = await res.json();
+    toast('草稿已创建');
+    await loadPrompts();
+    selectPrompt(p.id);
+  }
+
+  async function saveDraft() {
+    if (!currentPromptId) return;
+    const content = document.getElementById('prompt-textarea').value;
+    const label = document.getElementById('prompt-label-input').value;
+    // Re-create as new version (update label only; content is saved via new draft)
+    await fetch(`${API}/admin/prompts/${currentPromptId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ content, label }),
+    }).catch(() => {});
+    // Fallback: just show toast since PATCH may not exist yet
+    toast('已保存');
+  }
+
+  function openTestDialog() {
+    document.getElementById('test-area').style.display = 'block';
+  }
+
+  async function runTest() {
+    if (!currentPromptId) return;
+    const msg = document.getElementById('test-message-input').value.trim();
+    if (!msg) return;
+    const resultArea = document.getElementById('test-result-area');
+    resultArea.innerHTML = '<div style="font-size:13px;color:var(--text-muted);">测试中...</div>';
+    const res = await fetch(`${API}/admin/prompts/${currentPromptId}/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ test_message: msg }),
+    });
+    if (!res.ok) { resultArea.innerHTML = '<div style="color:var(--red);font-size:13px;">测试失败</div>'; return; }
+    const data = await res.json();
+    resultArea.innerHTML = `<div class="field-label">AI 回复预览</div><div class="test-result">${data.reply}</div>`;
+    await loadPrompts();
+  }
+
+  async function publishPrompt() {
+    if (!currentPromptId) return;
+    if (!confirm('发布后将替换当前生效的 Prompt，确认？')) return;
+    const res = await fetch(`${API}/admin/prompts/${currentPromptId}/publish`, {
+      method: 'POST', credentials: 'include',
+    });
+    if (!res.ok) return;
+    toast('已发布！');
+    await loadPrompts();
+    selectPrompt(currentPromptId);
+    loadStats();
+  }
+
+  async function rollbackPrompt() {
+    if (!currentPromptId) return;
+    if (!confirm('将此版本回滚为生效版本？')) return;
+    const res = await fetch(`${API}/admin/prompts/${currentPromptId}/rollback`, {
+      method: 'POST', credentials: 'include',
+    });
+    if (!res.ok) return;
+    toast('已回滚！');
+    await loadPrompts();
+    selectPrompt(currentPromptId);
+    loadStats();
+  }
+
+  // ── AI Suggest ─────────────────────────────────────────────────────────────
+  function openSuggestModal() {
+    document.getElementById('suggest-modal').classList.add('open');
+    document.getElementById('suggest-result').style.display = 'none';
+    document.getElementById('suggest-instruction').value = '';
+  }
+
+  function closeSuggestModal() {
+    document.getElementById('suggest-modal').classList.remove('open');
+  }
+
+  async function runAISuggest() {
+    const instruction = document.getElementById('suggest-instruction').value.trim();
+    if (!instruction) return;
+    const currentContent = document.getElementById('prompt-textarea').value;
+    const res = await fetch(`${API}/admin/prompts/ai-suggest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ current_content: currentContent, instruction }),
+    });
+    if (!res.ok) { toast('AI 建议生成失败'); return; }
+    const data = await res.json();
+    suggestedContent = data.suggested_content;
+    document.getElementById('suggest-explanation').textContent = data.explanation || '（无说明）';
+    document.getElementById('suggest-result').style.display = 'block';
+  }
+
+  function applySuggestion() {
+    document.getElementById('prompt-textarea').value = suggestedContent;
+    closeSuggestModal();
+    toast('已采用建议，记得保存草稿');
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('suggest-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('suggest-modal')) closeSuggestModal();
+  });
+
+  // ── LLM Config ────────────────────────────────────────────────────────────
+
+  const DEFAULT_MODELS = {
+    gemini: 'gemini-2.5-pro',
+    claude: 'claude-opus-4-7',
+    openai: 'gpt-4o',
+    ollama: 'gemma4:e4b',
+  };
+
+  async function loadLLMConfigs() {
+    const [cfgRes, statusRes] = await Promise.all([
+      fetch(`${API}/admin/llm-configs`, { credentials: 'include' }),
+      fetch(`${API}/status`, { credentials: 'include' }),
+    ]);
+    const configs = cfgRes.ok ? await cfgRes.json() : [];
+    const statusData = statusRes.ok ? await statusRes.json() : {};
+
+    // Banner: what users actually see in frontend dropdown
+    const banner = document.getElementById('llm-active-banner');
+    const providers = statusData.available_providers || [];
+    if (providers.length) {
+      banner.innerHTML = providers.map(p =>
+        `<span style="display:inline-flex;align-items:center;gap:8px;margin-right:24px;margin-bottom:4px;">
+          <span class="badge badge-green">${p.provider}</span>
+          <span style="font-size:13px;color:var(--text);">${p.models.join(' · ')}</span>
+        </span>`
+      ).join('');
+    } else {
+      banner.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">无已启用的模型</span>';
+    }
+
+    // Table
+    const tbody = document.getElementById('llm-tbody');
+    if (!configs.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">加载中...</td></tr>';
+      return;
+    }
+    tbody.innerHTML = configs.map(c => `
+      <tr>
+        <td><strong>${c.provider}</strong></td>
+        <td style="font-family:monospace;font-size:13px;">${c.model || DEFAULT_MODELS[c.provider] || '—'}</td>
+        <td style="color:var(--text-muted);font-size:13px;">${c.label || '—'}</td>
+        <td>${c.has_key ? '<span class="badge badge-green">已配置</span>' : '<span class="badge badge-red">未设置</span>'}</td>
+        <td>
+          <button class="btn btn-sm ${c.is_active ? 'btn-primary' : 'btn-ghost'}" onclick="toggleLLM(${c.id})">
+            ${c.is_active ? '已启用' : '已禁用'}
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="openLLMEditModal(${c.id}, '${c.provider}', '${c.model}', '${(c.label||'').replace(/'/g,"\\'")}')">编辑</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function toggleLLM(id) {
+    const res = await fetch(`${API}/admin/llm-configs/${id}/toggle-enabled`, { method: 'POST', credentials: 'include' });
+    if (!res.ok) { toast('操作失败'); return; }
+    const d = await res.json();
+    toast(d.is_active ? '已启用，前端下拉中可见' : '已禁用，前端下拉中隐藏');
+    loadLLMConfigs();
+  }
+
+  function openLLMEditModal(id, provider, model, label) {
+    document.getElementById('llm-edit-id').value = id;
+    document.getElementById('llm-edit-info').textContent = provider;
+    document.getElementById('llm-edit-model').value = model || '';
+    document.getElementById('llm-edit-apikey').value = '';
+    document.getElementById('llm-edit-label').value = label || '';
+    document.getElementById('llm-edit-modal').style.display = 'flex';
+  }
+
+  function closeLLMEditModal() {
+    document.getElementById('llm-edit-modal').style.display = 'none';
+  }
+
+  async function confirmLLMEdit() {
+    const id = document.getElementById('llm-edit-id').value;
+    const model = document.getElementById('llm-edit-model').value.trim();
+    const apiKey = document.getElementById('llm-edit-apikey').value.trim();
+    const label = document.getElementById('llm-edit-label').value.trim();
+    if (!confirm('确认保存修改？')) return;
+    const res = await fetch(`${API}/admin/llm-configs/${id}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, api_key: apiKey, label }),
+    });
+    if (!res.ok) { toast('保存失败'); return; }
+    toast('已保存');
+    closeLLMEditModal();
+    loadLLMConfigs();
+  }
+</script>
+</body>
+</html>

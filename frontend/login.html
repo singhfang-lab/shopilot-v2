@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>商户助手 — 登录</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #003178;
+      --primary-dark: #0d47a1;
+      --accent: #2563eb;
+      --bg: #f0f4ff;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1a1d1e;
+      --text-muted: #64748b;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,49,120,0.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── Background decoration ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 20%, rgba(37,99,235,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,49,120,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .page {
+      display: flex;
+      gap: 0;
+      width: 100%;
+      max-width: 900px;
+      min-height: 540px;
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Left brand panel ── */
+    .brand-panel {
+      flex: 1;
+      background: linear-gradient(145deg, var(--primary) 0%, var(--accent) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 52px 44px;
+      color: #fff;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 48px;
+    }
+
+    .brand-icon {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+
+    .brand-name {
+      font-family: 'Manrope', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-headline {
+      font-family: 'Manrope', sans-serif;
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-sub {
+      font-size: 15px;
+      line-height: 1.7;
+      opacity: 0.82;
+      max-width: 320px;
+    }
+
+    .brand-features {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .brand-feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      opacity: 0.90;
+    }
+
+    .brand-feature-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.7);
+      flex-shrink: 0;
+    }
+
+    /* ── Right form panel ── */
+    .form-panel {
+      width: 400px;
+      flex-shrink: 0;
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 52px 44px;
+    }
+
+    .form-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .form-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .tab {
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── Form ── */
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .auth-form.hidden { display: none; }
+
+    .field-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .field-wrap { display: flex; flex-direction: column; }
+
+    .auth-form input {
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      background: #fafbfc;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .auth-form input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
+    }
+
+    .auth-form input::placeholder { color: #b0b7c3; }
+
+    .error-msg {
+      font-size: 12px;
+      color: #ef4444;
+      min-height: 16px;
+    }
+
+    .submit-btn {
+      margin-top: 6px;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .submit-btn:hover { opacity: 0.88; }
+    .submit-btn:active { transform: scale(0.98); }
+
+    .form-footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 680px) {
+      .brand-panel { display: none; }
+      .form-panel { width: 100%; }
+      .page { max-width: 440px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <!-- Brand panel -->
+  <div class="brand-panel">
+    <div class="brand-logo">
+      <div class="brand-icon">🏪</div>
+      <div class="brand-name">商户助手</div>
+    </div>
+    <div class="brand-headline">让每个商家都有一位<br>专属经营顾问</div>
+    <div class="brand-sub">AI 驱动的智能分析平台，帮助你读懂数据、发现机会、做出更好的经营决策。</div>
+    <div class="brand-features">
+      <div class="brand-feature"><div class="brand-feature-dot"></div>销售数据深度分析，找出增长机会</div>
+      <div class="brand-feature"><div class="brand-feature-dot"></div>竞争对手研究，掌握市场格局</div>
+      <div class="brand-feature"><div class="brand-feature-dot"></div>菜单/产品优化建议，提升客单价</div>
+      <div class="brand-feature"><div class="brand-feature-dot"></div>AI 生成营销方案，精准触达顾客</div>
+    </div>
+  </div>
+
+  <!-- Form panel -->
+  <div class="form-panel">
+    <div class="form-title">欢迎回来</div>
+    <div class="form-subtitle">登录你的账号，继续经营分析</div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="login">登录</div>
+      <div class="tab" data-tab="register">注册账号</div>
+    </div>
+
+    <!-- Login form -->
+    <form id="login-form" class="auth-form" onsubmit="return false">
+      <div class="field-wrap">
+        <div class="field-label">邮箱</div>
+        <input id="login-email" type="email" placeholder="your@email.com" autocomplete="email" required />
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">密码</div>
+        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <div id="login-error" class="error-msg"></div>
+      <button class="submit-btn" onclick="submitLogin()">登录</button>
+    </form>
+
+    <!-- Register form -->
+    <form id="register-form" class="auth-form hidden" onsubmit="return false">
+      <div class="field-wrap">
+        <div class="field-label">你的姓名（选填）</div>
+        <input id="reg-name" type="text" placeholder="你的名字" />
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">邮箱 *</div>
+        <input id="reg-email" type="email" placeholder="your@email.com" autocomplete="email" required />
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">密码 *</div>
+        <input id="reg-password" type="password" placeholder="至少 6 位" autocomplete="new-password" required />
+      </div>
+      <div id="register-error" class="error-msg"></div>
+      <button class="submit-btn" onclick="submitRegister()">创建账号</button>
+    </form>
+
+    <div class="form-footer">登录即表示你同意我们的服务条款和隐私政策</div>
+  </div>
+</div>
+
+<script>
+  const API = window.location.hostname === 'localhost' ? 'http://localhost:8081' : '';
+
+  // Redirect if already logged in
+  fetch(`${API}/auth/me`, { credentials: 'include' })
+    .then(r => { if (r.ok) window.location.replace('/index.html'); })
+    .catch(() => {});
+
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const which = tab.dataset.tab;
+      document.getElementById('login-form').classList.toggle('hidden', which !== 'login');
+      document.getElementById('register-form').classList.toggle('hidden', which !== 'register');
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('register-error').textContent = '';
+      // Update title
+      document.querySelector('.form-title').textContent = which === 'login' ? '欢迎回来' : '创建账号';
+      document.querySelector('.form-subtitle').textContent = which === 'login'
+        ? '登录你的账号，继续经营分析'
+        : '注册后立即开始你的经营分析之旅';
+    });
+  });
+
+  // Enter key support
+  document.getElementById('login-form').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitLogin();
+  });
+  document.getElementById('register-form').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitRegister();
+  });
+
+  async function submitLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    if (!email || !password) { errEl.textContent = '请填写邮箱和密码'; return; }
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        errEl.textContent = data.detail || '邮箱或密码错误';
+        return;
+      }
+      const next = new URLSearchParams(location.search).get('next');
+      window.location.replace(next === 'admin' ? '/admin.html' : '/index.html');
+    } catch {
+      errEl.textContent = '网络错误，请重试';
+    }
+  }
+
+  async function submitRegister() {
+    const display_name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const errEl = document.getElementById('register-error');
+    errEl.textContent = '';
+    if (!email) { errEl.textContent = '请填写邮箱'; return; }
+    if (password.length < 6) { errEl.textContent = '密码至少 6 位'; return; }
+    try {
+      const res = await fetch(`${API}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password, display_name }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        errEl.textContent = data.detail || '注册失败，请重试';
+        return;
+      }
+      window.location.replace('/onboarding.html');
+    } catch {
+      errEl.textContent = '网络错误，请重试';
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment & secrets
+backend/.env
+.env
+*.env
+
+# Database files
+*.db
+*.sqlite
+
+# ChromaDB local store
+chromadb/
+
+# Uploads & user data
+uploads/
+
+# Logs
+logs/
+*.log
+
+# Test reports (generated artifacts)
+test_report_*.json
+test_report_*.html
+
+# macOS
+.DS_Store
+
+# Local config
+config/
+
+# Memory (Claude internal)
+memory/

@@ -1,0 +1,3074 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>商户助手</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #003178;
+      --primary-dark: #0d47a1;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --surface: #f3f4f5;
+      --border: #e7e8e9;
+      --hover: #f0f4ff;
+      --text: #1a1d1e;
+      --text-muted: #6b7280;
+      --user-bubble: #d9e2ff;
+      --shadow: 0 2px 8px rgba(25,28,29,0.04);
+      --shadow-md: 0 4px 16px rgba(25,28,29,0.08);
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --radius-tag: 20px;
+    }
+
+    html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+    /* ─── Root layout ────────────────────────────── */
+    #shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── Topbar ─────────────────────────────────── */
+    #topbar {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    #brand {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      color: var(--primary);
+    }
+
+    #topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    #status-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--radius-tag);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    #status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #9ca3af;
+      transition: background 0.3s;
+    }
+    #status-dot.online  { background: #22c55e; }
+    #status-dot.offline { background: #ef4444; }
+
+    #model-tag {
+      padding: 4px 12px;
+      border-radius: var(--radius-tag);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--primary);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #model-switch {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    #model-switch-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-tag);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--primary);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    #model-switch-btn:hover { background: #e8edff; }
+    #model-switch-btn .ms-caret { font-size: 9px; color: var(--text-muted); }
+    #model-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      z-index: 200;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      min-width: 200px;
+      padding: 6px 0;
+    }
+    #model-dropdown.hidden { display: none; }
+    .ms-provider-header {
+      padding: 4px 14px 2px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .ms-model-item {
+      padding: 6px 14px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.12s;
+    }
+    .ms-model-item:hover { background: var(--hover); }
+    .ms-model-item.active { color: var(--primary); font-weight: 600; }
+    .ms-model-item.active::after { content: '✓'; margin-left: auto; font-size: 11px; }
+    .ms-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* ─── Content row ────────────────────────────── */
+    #content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ─── Chat pane ──────────────────────────────── */
+    #chat-pane {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 300px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* ─── Divider ────────────────────────────────── */
+    #divider {
+      width: 4px;
+      flex-shrink: 0;
+      cursor: col-resize;
+      background: var(--border);
+      transition: background 0.15s, width 0.15s;
+      position: relative;
+      z-index: 5;
+    }
+    #divider:hover, #divider.dragging { background: var(--primary); width: 5px; }
+
+    /* ─── Canvas pane ────────────────────────────── */
+    #canvas-pane {
+      display: flex;
+      flex-direction: column;
+      width: 680px;
+      min-width: 320px;
+      max-width: 1000px;
+      background: var(--card);
+      border-left: 1px solid var(--border);
+      overflow: hidden;
+      transition: width 0.2s ease;
+    }
+    #canvas-pane.collapsed { width: 0 !important; min-width: 0; border-left: none; }
+
+    /* Canvas toggle button on divider */
+    #canvas-toggle {
+      position: absolute;
+      top: 50%;
+      right: -14px;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 40px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      z-index: 20;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.06);
+    }
+    #canvas-toggle:hover { color: var(--primary); background: #f0f4ff; }
+
+    /* ─── Canvas header ──────────────────────────── */
+    #canvas-header {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    #canvas-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    #canvas-clear-btn {
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      transition: color 0.15s, border-color 0.15s;
+      display: none;
+    }
+    #canvas-clear-btn:hover { color: #ef4444; border-color: #ef4444; }
+
+    /* ─── Canvas body ────────────────────────────── */
+    #canvas-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ─── Module wrapper ─────────────────────────── */
+    .canvas-module {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .module-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 2px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .module-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* empty state */
+    #canvas-empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    #canvas-empty-state .empty-icon { font-size: 36px; opacity: 0.35; }
+
+    /* ─── Chart cards in canvas ──────────────────── */
+    .canvas-chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 14px;
+      overflow: hidden;
+    }
+    .canvas-chart-card > div:last-child { width: 100%; }
+    .canvas-chart-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ─── Competitor list in canvas ──────────────── */
+    .competitor-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .competitor-card:hover { box-shadow: var(--shadow-md); border-color: #c7d2fe; }
+    .competitor-card .comp-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .competitor-card .comp-meta { display: flex; gap: 10px; font-size: 11px; color: var(--text-muted); flex-wrap: wrap; }
+    .comp-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 1px 6px; border-radius: 4px;
+      background: #eff6ff; color: var(--primary);
+      font-size: 11px; font-weight: 500;
+    }
+
+    /* ─── Action plan in canvas ──────────────────── */
+    .action-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+    .action-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .action-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+
+    /* ─── Analysis cards ─────────────────────────── */
+    .analysis-card {
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    .analysis-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 16px 12px;
+    }
+    .analysis-card-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .analysis-card-icon.severity-high   { background: #fee2e2; }
+    .analysis-card-icon.severity-medium { background: #fef3c7; }
+    .analysis-card-icon.severity-low    { background: #dcfce7; }
+    .analysis-card-icon.type-opportunity{ background: #eff6ff; }
+    .analysis-card-icon.type-paradox    { background: #fdf4ff; }
+    .analysis-card-icon.type-action     { background: #f0fdf4; }
+    .analysis-card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .analysis-card-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .analysis-card-body {
+      padding: 0 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .analysis-row {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 6px;
+      align-items: baseline;
+    }
+    .analysis-row-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-top: 1px;
+    }
+    .analysis-row-value {
+      font-size: 12.5px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .analysis-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+    .analysis-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 10px 16px 14px;
+    }
+    .analysis-action-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .analysis-action-dot {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .dot-now    { background: #ef4444; }
+    .dot-week   { background: #f59e0b; }
+    .dot-later  { background: #22c55e; }
+    .dot-track  { background: #8b5cf6; }
+    .severity-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .badge-high   { background: #fee2e2; color: #dc2626; }
+    .badge-medium { background: #fef3c7; color: #d97706; }
+    .badge-low    { background: #dcfce7; color: #16a34a; }
+
+    /* ─── Collapsible chart section ──────────────── */
+    .chart-section-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .chart-section-toggle:hover { background: #f0f4ff; }
+    .chart-section-toggle-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .chart-section-arrow {
+      font-size: 12px;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+    .chart-section-arrow.open { transform: rotate(180deg); }
+    .chart-section-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .chart-section-body.collapsed { max-height: 0 !important; }
+    .chart-jump-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 8px; padding: 4px 10px;
+      background: #eff6ff; color: #2563eb;
+      border: 1px solid #bfdbfe; border-radius: 20px;
+      font-size: 12px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .chart-jump-badge:hover { background: #dbeafe; }
+
+    /* ─── Welcome screen ─────────────────────────── */
+    #welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      gap: 28px;
+    }
+    #welcome.hidden { display: none; }
+    #welcome-heading h2 {
+      font-family: 'Manrope', sans-serif;
+      font-size: 24px; font-weight: 800;
+      color: var(--primary); margin-bottom: 8px; text-align: center;
+    }
+    #welcome-heading p { font-size: 14px; color: var(--text-muted); text-align: center; }
+
+    #quick-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      width: 100%;
+      max-width: 520px;
+    }
+    .quick-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 18px;
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .quick-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: #c7d2fe; }
+    .quick-card .card-icon { font-size: 22px; }
+    .quick-card .card-title { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); }
+    .quick-card .card-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+    /* ─── Messages ───────────────────────────────── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 20px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+    #messages.hidden { display: none; }
+
+    @keyframes slideInRight { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes slideInLeft  { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+
+    .msg-row { display:flex; align-items:flex-end; gap:8px; }
+    .msg-row.user { justify-content:flex-end; animation:slideInRight 0.3s ease; }
+    .msg-row.assistant { justify-content:flex-start; animation:slideInLeft 0.3s ease; }
+
+    .msg-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 14px; flex-shrink: 0;
+    }
+
+    .bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+    .msg-row.user .bubble {
+      background: var(--user-bubble);
+      border-radius: 16px 4px 16px 16px;
+      color: var(--text);
+    }
+    .msg-row.assistant .bubble {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px 16px 16px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .bubble h1,.bubble h2,.bubble h3 { font-family:'Manrope',sans-serif; margin:10px 0 5px; color:var(--primary); }
+    .bubble h1{font-size:16px;} .bubble h2{font-size:14px;} .bubble h3{font-size:13px;}
+    .bubble p { margin-bottom:7px; } .bubble p:last-child { margin-bottom:0; }
+    .bubble ul,.bubble ol { padding-left:16px; margin-bottom:7px; }
+    .bubble li { margin-bottom:3px; }
+    .bubble code { background:var(--surface); padding:2px 5px; border-radius:4px; font-size:12px; }
+    .bubble pre { background:#1e2937; color:#e2e8f0; padding:10px; border-radius:8px; overflow-x:auto; margin:7px 0; }
+    .bubble pre code { background:none; padding:0; color:inherit; font-size:12px; }
+    .bubble table { width:100%; border-collapse:collapse; font-size:12px; margin:7px 0; }
+    .bubble th,.bubble td { border:1px solid var(--border); padding:5px 9px; text-align:left; }
+    .bubble th { background:var(--surface); font-weight:600; }
+
+    /* ─── Thinking ───────────────────────────────── */
+    @keyframes pulse-dot {
+      0%,80%,100% { transform:scale(0.6); opacity:0.4; }
+      40%          { transform:scale(1);   opacity:1; }
+    }
+    .thinking-row { display:flex; align-items:flex-end; gap:8px; animation:slideInLeft 0.3s ease; }
+    .thinking-bubble {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:4px 16px 16px 16px;
+      padding:12px 16px;
+      display:flex; gap:5px; align-items:center;
+      box-shadow:var(--shadow);
+    }
+    .thinking-dot {
+      width:7px; height:7px; border-radius:50%;
+      background:var(--primary); display:inline-block; flex-shrink:0;
+      animation:pulse-dot 1.2s ease-in-out infinite;
+    }
+    .thinking-dot:nth-child(2){animation-delay:0.2s;}
+    .thinking-dot:nth-child(3){animation-delay:0.4s;}
+    .thinking-label { font-size:12px; color:var(--text-muted); margin-left:6px; white-space:nowrap; }
+
+    /* ─── Input area ─────────────────────────────── */
+    #input-area {
+      padding: 12px 16px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #file-list { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:7px; }
+    .file-chip {
+      display:flex; align-items:center; gap:4px;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:20px; padding:3px 9px;
+      font-size:11px; color:var(--text-muted);
+    }
+    .remove-file { cursor:pointer; color:#9ca3af; font-size:13px; transition:color 0.2s; }
+    .remove-file:hover { color:#ef4444; }
+
+    #input-row { display:flex; gap:8px; align-items:flex-end; }
+    #msg-input {
+      flex:1; resize:none;
+      border:1px solid var(--border); border-radius:var(--radius-card);
+      padding:10px 14px;
+      font-family:'Inter',sans-serif; font-size:13.5px;
+      color:var(--text); background:var(--surface);
+      outline:none; min-height:40px; max-height:130px; line-height:1.5;
+      transition:border-color 0.2s, box-shadow 0.2s;
+    }
+    #msg-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(0,49,120,0.08); }
+    #msg-input::placeholder { color:var(--text-muted); }
+
+    .icon-btn {
+      width:40px; height:40px;
+      border:1px solid var(--border); border-radius:var(--radius-btn);
+      background:var(--surface); cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--text-muted); flex-shrink:0;
+      transition:background 0.2s, color 0.2s;
+    }
+    .icon-btn:hover { background:#e8edff; color:var(--primary); border-color:#c7d2fe; }
+
+    #send-btn {
+      width:40px; height:40px; border:none; border-radius:var(--radius-btn);
+      background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      color:white; flex-shrink:0;
+      box-shadow:0 2px 8px rgba(0,49,120,0.25);
+      transition:opacity 0.2s, transform 0.2s, background 0.2s;
+    }
+    #send-btn:hover { opacity:0.9; transform:scale(1.04); }
+    #send-btn:active { transform:scale(0.97); }
+    #send-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+    #send-btn.stop {
+      background:linear-gradient(135deg,#ef4444,#dc2626);
+      box-shadow:0 2px 8px rgba(220,38,38,0.3);
+      opacity:1; cursor:pointer;
+    }
+    #send-btn.stop:hover { opacity:0.9; transform:scale(1.04); }
+
+    /* ─── Footer ─────────────────────────────────── */
+
+    /* ─── Modal ──────────────────────────────────── */
+    #modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.35);
+      display:flex; align-items:center; justify-content:center;
+      z-index:100; backdrop-filter:blur(4px);
+    }
+    #modal-overlay.hidden { display:none; }
+    #modal {
+      background:rgba(255,255,255,0.88); backdrop-filter:blur(12px);
+      border:1px solid rgba(255,255,255,0.6); border-radius:20px;
+      padding:32px; width:100%; max-width:400px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.18);
+      animation:slideInRight 0.3s ease;
+    }
+    #modal h2 { font-family:'Manrope',sans-serif; font-size:20px; font-weight:800; color:var(--primary); margin-bottom:5px; }
+    #modal p.modal-sub { font-size:12px; color:var(--text-muted); margin-bottom:24px; }
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:5px; }
+    .form-group input {
+      width:100%; border:1px solid var(--border); border-radius:var(--radius-btn);
+      padding:9px 12px; font-family:'Inter',sans-serif; font-size:13px;
+      color:var(--text); background:var(--card); outline:none;
+      transition:border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(0,49,120,0.08); }
+    #modal-save-btn {
+      width:100%; height:44px; border:none; border-radius:var(--radius-btn);
+      background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+      color:white; font-family:'Manrope',sans-serif; font-size:14px; font-weight:700;
+      cursor:pointer; transition:opacity 0.2s;
+      box-shadow:0 4px 14px rgba(0,49,120,0.3); margin-top:6px;
+    }
+    #modal-save-btn:hover { opacity:0.92; }
+    #modal-skip { display:block; text-align:center; margin-top:12px; font-size:12px; color:var(--text-muted); cursor:pointer; }
+    #modal-skip:hover { color:var(--primary); }
+
+    /* ─── Scrollbar ──────────────────────────────── */
+    #messages::-webkit-scrollbar,#canvas-body::-webkit-scrollbar { width:3px; }
+    #messages::-webkit-scrollbar-track,#canvas-body::-webkit-scrollbar-track { background:transparent; }
+    #messages::-webkit-scrollbar-thumb,#canvas-body::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:3px; }
+
+    /* ── Sidebar user card ───────────────────────────── */
+    #sidebar-user-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 14px 12px;
+      flex-shrink: 0;
+    }
+    #sidebar-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+    }
+    #sidebar-user-info { min-width: 0; }
+    #sidebar-user-name {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #sidebar-merchant-name {
+      font-size: 11px; color: var(--text-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+    #sidebar-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      flex-shrink: 0;
+    }
+    #sidebar-footer button {
+      background: none; border: none; cursor: pointer;
+      font-size: 12px; color: var(--text-muted);
+      padding: 4px 8px; border-radius: 6px;
+      transition: background 0.12s, color 0.12s;
+    }
+    #sidebar-footer button:hover { background: var(--hover); color: var(--text); }
+    #sidebar-logout-btn:hover { color: #ef4444 !important; }
+
+    /* ── Sidebar ─────────────────────────────────────── */
+    #sidebar {
+      width: 240px;
+      min-width: 0;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.2s ease;
+    }
+    #sidebar.collapsed { width: 0; border-right: none; }
+    #sidebar-divider {
+      width: 4px;
+      flex-shrink: 0;
+      background: var(--border);
+      cursor: col-resize;
+      position: relative;
+      transition: background 0.15s;
+    }
+    #sidebar-divider:hover { background: var(--accent); }
+    #sidebar-toggle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--text-muted);
+      user-select: none;
+      z-index: 10;
+    }
+    #sidebar-toggle:hover { background: var(--hover); color: var(--text); }
+    .sidebar-inner { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .sidebar-inner::-webkit-scrollbar { width: 3px; }
+    .sidebar-inner::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    .sidebar-section { padding: 4px 0; }
+    .sidebar-rule { height: 1px; background: var(--border); margin: 4px 12px; }
+    .sidebar-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .sidebar-section-header button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1;
+      padding: 0 2px;
+    }
+    .sidebar-section-header button:hover { color: var(--text); }
+    .sidebar-list { padding: 0 6px; }
+    .conv-item {
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.12s;
+      white-space: nowrap;
+      overflow: visible;
+      position: relative;
+    }
+    .conv-item:hover { background: var(--hover); }
+    .conv-item.active { background: var(--accent-light, #eff6ff); }
+    .conv-item-title { font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; padding-right: 18px; }
+    .conv-item-date { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .conv-item-del {
+      position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+      display: block; background: none; border: none; cursor: pointer;
+      font-size: 13px; color: transparent; line-height: 1; padding: 2px 3px;
+      border-radius: 3px; transition: color 0.15s;
+    }
+    .conv-item:hover .conv-item-del { color: var(--text-muted); }
+    .conv-item-del:hover { color: #ef4444 !important; background: rgba(239,68,68,0.08); }
+    .kb-summary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .kb-summary:hover { background: var(--hover); }
+    .kb-status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .kb-status-dot.indexed { background: #22c55e; }
+    .kb-status-dot.processing { background: #f59e0b; }
+    .kb-status-dot.failed { background: #ef4444; }
+    .kb-summary-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kb-summary-arrow { font-size: 10px; color: var(--text-muted); }
+
+    /* ── KB detail modal ── */
+    #kb-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    #kb-modal-overlay.hidden { display: none; }
+    #kb-modal {
+      background: var(--surface);
+      border-radius: 16px;
+      width: 520px;
+      max-width: 100%;
+      max-height: 82vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      overflow: hidden;
+    }
+    #kb-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #kb-modal-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    #kb-modal-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 20px; color: var(--text-muted); line-height: 1;
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+    }
+    #kb-modal-close:hover { background: var(--hover); }
+    #kb-modal-body { overflow-y: auto; flex: 1; padding: 0; }
+
+    /* Brief card styles */
+    .brief-hero {
+      background: linear-gradient(135deg, var(--accent) 0%, #1e40af 100%);
+      padding: 20px;
+      display: flex; align-items: center; gap: 14px;
+      color: #fff;
+    }
+    .brief-avatar {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .brief-hero-name { font-size: 18px; font-weight: 700; }
+    .brief-hero-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+    .brief-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .brief-stat {
+      background: var(--surface);
+      padding: 12px 14px; text-align: center;
+    }
+    .brief-stat-value { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .brief-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .brief-sections { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+    .brief-section {
+      background: var(--bg);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .brief-section-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .brief-section-icon {
+      width: 26px; height: 26px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .brief-section-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .brief-section-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .brief-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12.5px; line-height: 1.65; color: var(--text);
+      padding: 2px 0;
+    }
+    .brief-item.brief-sub {
+      padding-left: 20px;
+      margin-top: 2px;
+    }
+    .brief-item-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent); margin-top: 6px; flex-shrink: 0;
+    }
+    .brief-item-dot.sub { background: #cbd5e1; width: 4px; height: 4px; margin-top: 7px; }
+    .brief-item strong { color: var(--text); font-weight: 600; }
+    .brief-summary {
+      margin: 0 20px 20px;
+      padding: 14px;
+      background: #eff6ff;
+      border-radius: 10px;
+      font-size: 12.5px; line-height: 1.7; color: #1e40af;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* File list styles */
+    .kb-detail-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .kb-detail-item:last-child { border-bottom: none; }
+    .kb-detail-name { flex: 1; color: var(--text); }
+    .kb-detail-meta { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .kb-detail-del {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); font-size: 13px; opacity: 0.5;
+    }
+    .kb-detail-del:hover { color: #ef4444; opacity: 1; }
+
+    /* ── Auth modal ──────────────────────────────────── */
+    #auth-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    #auth-modal-overlay.hidden { display: none; }
+    #auth-modal {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 28px 32px;
+      width: 360px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    #auth-modal h2 { margin: 0 0 20px; font-size: 18px; }
+    .auth-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .auth-tab {
+      padding: 6px 16px; cursor: pointer; font-size: 14px;
+      color: var(--text-muted); border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    .auth-form { display: flex; flex-direction: column; gap: 12px; }
+    .auth-form.hidden { display: none; }
+    .auth-form input {
+      padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px;
+      background: var(--bg); color: var(--text);
+      outline: none;
+    }
+    .auth-form input:focus { border-color: var(--accent); }
+    .auth-submit {
+      padding: 10px; background: var(--accent);
+      color: #fff; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      margin-top: 4px;
+    }
+    .auth-submit:hover { opacity: 0.88; }
+    #auth-error { font-size: 13px; color: #ef4444; min-height: 18px; }
+
+    /* ── User avatar / dropdown ──────────────────────── */
+    #user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      user-select: none; position: relative;
+    }
+    #user-dropdown {
+      position: absolute; top: 38px; right: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      min-width: 160px; z-index: 200; padding: 4px 0;
+    }
+    #user-dropdown.hidden { display: none; }
+    .dropdown-item {
+      padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--text);
+    }
+    .dropdown-item:hover { background: var(--hover); }
+    .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    @media(max-width:640px) {
+      #canvas-pane { display:none; }
+      #divider { display:none; }
+      #quick-cards { grid-template-columns:1fr; }
+      #sidebar { display:none; }
+      #sidebar-divider { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- First-run modal -->
+<div id="modal-overlay">
+  <div id="modal" style="max-width:420px;padding:32px;">
+    <h2 style="font-size:18px;margin-bottom:4px;">商家设置</h2>
+    <p class="modal-sub" style="margin-bottom:24px;">管理你绑定的商家信息</p>
+
+    <!-- Current merchant info -->
+    <div id="merchant-info-block" style="padding:16px;background:#f8faff;border-radius:10px;border:1.5px solid #e2e8f0;margin-bottom:20px;">
+      <div style="font-size:12px;color:#64748b;margin-bottom:4px;">当前绑定商家</div>
+      <div id="merchant-info-name" style="font-weight:700;font-size:16px;color:#1a1d1e;margin-bottom:6px;"></div>
+      <div id="merchant-info-meta" style="font-size:12px;color:#64748b;line-height:1.6;"></div>
+    </div>
+
+    <!-- Edit name -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:500;color:#64748b;margin-bottom:5px;">修改商家名称</div>
+      <input type="text" id="merchant-name-input"
+        style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;background:#fafbfc;outline:none;"
+        onfocus="this.style.borderColor='#2563eb';this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.10)'"
+        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"
+      />
+    </div>
+    <div id="merchant-settings-error" style="font-size:12px;color:#ef4444;min-height:16px;margin-bottom:8px;"></div>
+
+    <button id="modal-save-btn" style="width:100%;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px;">保存修改</button>
+    <button id="rebind-btn" style="width:100%;padding:10px;background:transparent;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;color:#64748b;cursor:pointer;margin-bottom:10px;">重新选择商家</button>
+    <button id="modal-cancel-btn" style="width:100%;padding:10px;background:transparent;border:none;font-size:13px;color:#94a3b8;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+<!-- App shell -->
+<div id="shell">
+
+  <!-- Topbar -->
+  <header id="topbar">
+    <div id="brand">商户助手<span style="font-size:10px;font-weight:400;opacity:0.45;margin-left:6px;letter-spacing:0">v0.2.0</span></div>
+    <div id="topbar-right">
+      <div id="status-tag">
+        <div id="status-dot"></div>
+        <span id="status-text">检测中…</span>
+      </div>
+      <div id="model-tag">—</div>
+      <div id="model-switch">
+        <div id="model-switch-btn">
+          <span id="ms-label">检测中…</span>
+          <span class="ms-caret">▼</span>
+        </div>
+        <div id="model-dropdown" class="hidden"></div>
+      </div>
+      <button id="settings-btn" title="设置" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px 6px;color:var(--text-muted);line-height:1;">⚙</button>
+      <div id="user-avatar" title="账号">?</div>
+      <div id="user-dropdown" class="hidden">
+        <div class="dropdown-item" id="dropdown-email" style="color:var(--text-muted);cursor:default;font-size:12px;"></div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item" id="admin-link" style="display:none">管理后台</div>
+        <div class="dropdown-item" id="logout-btn">退出登录</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <!-- User card at top -->
+      <div id="sidebar-user-card">
+        <div id="sidebar-avatar"></div>
+        <div id="sidebar-user-info">
+          <div id="sidebar-user-name"></div>
+          <div id="sidebar-merchant-name"></div>
+        </div>
+      </div>
+      <div class="sidebar-rule" style="margin:0"></div>
+
+      <div class="sidebar-inner">
+        <div class="sidebar-section">
+          <div class="sidebar-section-header">
+            <span>对话记录</span>
+            <button id="new-conv-btn" title="新建对话">+</button>
+          </div>
+          <div id="conv-list" class="sidebar-list"></div>
+        </div>
+        <div class="sidebar-rule"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-header">
+            <span>商家知识库</span>
+            <button id="kb-upload-trigger" title="上传文件">+</button>
+          </div>
+          <div id="merchant-kb-list" class="sidebar-list"></div>
+        </div>
+        <div class="sidebar-rule"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-header"><span>平台知识库</span></div>
+          <div id="platform-kb-list" class="sidebar-list"></div>
+        </div>
+      </div>
+
+      <!-- Bottom: settings & logout -->
+      <div class="sidebar-rule" style="margin:0"></div>
+      <div id="sidebar-footer">
+        <button id="sidebar-settings-btn" title="账号设置">⚙ 设置</button>
+        <button id="sidebar-logout-btn" title="退出登录">退出</button>
+      </div>
+    </div>
+    <div id="sidebar-divider">
+      <div id="sidebar-toggle" title="收起/展开侧边栏">‹</div>
+    </div>
+
+    <!-- Chat pane -->
+    <div id="chat-pane">
+
+      <!-- Welcome -->
+      <div id="welcome">
+        <div id="welcome-heading">
+          <h2>今天有什么可以帮你？</h2>
+          <p>直接提问，或从下方选择一个方向开始。</p>
+        </div>
+        <div id="quick-cards">
+          <div class="quick-card" data-prompt="请帮我分析一下我的销售数据，包括收入趋势、高峰时段和热销商品。">
+            <div class="card-icon">📊</div>
+            <div class="card-title">销售分析</div>
+            <div class="card-desc">收入趋势、高峰时段、热销商品</div>
+          </div>
+          <div class="quick-card" data-prompt="请帮我调查周边竞争对手，分析我应该如何差异化。">
+            <div class="card-icon">🔍</div>
+            <div class="card-title">竞品分析</div>
+            <div class="card-desc">分析周边竞争门店</div>
+          </div>
+          <div class="quick-card" data-prompt="帮我优化菜单，哪些商品该加、该减或调整定价？">
+            <div class="card-icon">💡</div>
+            <div class="card-title">菜单优化</div>
+            <div class="card-desc">定价、商品结构、上新建议</div>
+          </div>
+          <div class="quick-card" data-prompt="给我5个这个月吸引更多顾客的创意营销方案。">
+            <div class="card-icon">📣</div>
+            <div class="card-title">营销方案</div>
+            <div class="card-desc">活动策划与推广</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="messages" class="hidden"></div>
+
+      <!-- Input -->
+      <div id="input-area">
+        <div id="file-list"></div>
+        <div id="input-row">
+          <button class="icon-btn" id="upload-btn" title="上传文件">
+            <span class="material-icons" style="font-size:19px">attach_file</span>
+          </button>
+          <input type="file" id="file-input" multiple accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg,.webp" style="display:none" />
+          <textarea id="msg-input" rows="1" placeholder="问问关于你的生意…"></textarea>
+          <button id="send-btn" title="发送">
+            <span class="material-icons send-icon" style="font-size:19px">send</span>
+            <span class="material-icons stop-icon" style="font-size:19px;display:none">stop</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Divider -->
+    <div id="divider">
+      <div id="canvas-toggle" title="收起/展开画布">›</div>
+    </div>
+
+    <!-- Canvas pane -->
+    <div id="canvas-pane">
+
+      <button id="canvas-clear-btn" style="display:none">清空</button>
+      <!-- Module body -->
+      <div id="canvas-body">
+        <div id="canvas-empty-state">
+          <span class="empty-icon material-icons">dashboard</span>
+          <span>对话中自动生成的内容将显示在这里</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- KB detail modal -->
+<div id="kb-modal-overlay" class="hidden">
+  <div id="kb-modal">
+    <div id="kb-modal-header">
+      <div id="kb-modal-title"></div>
+      <button id="kb-modal-close">×</button>
+    </div>
+    <div id="kb-modal-body"></div>
+  </div>
+</div>
+
+<script>
+  // ── Config ───────────────────────────────────────
+  const API = window.location.hostname === 'localhost' ? 'http://localhost:8081' : '';
+  const STORAGE_KEY = 'ba_config';
+  const MODEL_KEY = 'ba_model_pref';
+  const MAPBOX_TOKEN = 'pk.eyJ1IjoicG9ybmFzcyIsImEiOiJjbW00azRhZGgwZGlkMnNvY29iOWtucWJ3In0.Z7dBUA7mgprPUigKveMydA';
+
+  // ── State ─────────────────────────────────────────
+  let conversationStarted = false;
+  let isStreaming = false;
+  let _abortController = null;
+  let currentUser = null;
+  let currentConvId = null;
+
+  // ── Auth flow ─────────────────────────────────────
+  async function handleAuthFlow() {
+    try {
+      const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
+      if (res.ok) {
+        currentUser = await res.json();
+        // Redirect to onboarding if no merchant bound yet (unless user explicitly skipped)
+        if (!currentUser.merchant && !new URLSearchParams(location.search).get('skip_onboarding')) {
+          window.location.replace('/onboarding.html');
+          return;
+        }
+        _onUserReady();
+      } else {
+        window.location.replace('/login.html');
+      }
+    } catch {
+      window.location.replace('/login.html');
+    }
+  }
+
+  function _onUserReady() {
+    const initials = (currentUser.display_name || currentUser.email || '?').slice(0, 1).toUpperCase();
+
+    // Topbar avatar
+    const avatar = document.getElementById('user-avatar');
+    if (avatar) avatar.textContent = initials;
+
+    // Topbar dropdown
+    const emailEl = document.getElementById('dropdown-email');
+    if (emailEl) emailEl.textContent = currentUser.email;
+    if (currentUser.role === 'admin') {
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) adminLink.style.display = '';
+    }
+
+    // Sidebar user card
+    const sidebarAvatar = document.getElementById('sidebar-avatar');
+    if (sidebarAvatar) sidebarAvatar.textContent = initials;
+    const sidebarName = document.getElementById('sidebar-user-name');
+    if (sidebarName) sidebarName.textContent = currentUser.display_name || currentUser.email;
+    const sidebarMerchant = document.getElementById('sidebar-merchant-name');
+    if (sidebarMerchant) {
+      sidebarMerchant.textContent = currentUser.merchant
+        ? `🏪 ${currentUser.merchant.name}`
+        : '未绑定商家';
+    }
+
+    loadSidebar();
+  }
+
+  function showAuthModal() {
+    window.location.replace('/login.html');
+  }
+  function hideAuthModal() {}
+
+  // ── Sidebar ───────────────────────────────────────
+  async function loadSidebar() {
+    initConvListEvents();
+    await Promise.all([loadConversations(), loadMerchantKB(), loadPlatformKB()]);
+  }
+
+  async function loadConversations() {
+    try {
+      const res = await fetch(`${API}/conversations`, { credentials: 'include' });
+      if (!res.ok) return;
+      const items = await res.json();
+      renderConvList(items);
+    } catch {}
+  }
+
+  function renderConvList(items) {
+    const container = document.getElementById('conv-list');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!items.length) {
+      container.innerHTML = '<div style="padding:6px 8px;font-size:12px;color:var(--text-muted)">暂无对话记录</div>';
+      return;
+    }
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'conv-item' + (item.id === currentConvId ? ' active' : '');
+      el.dataset.convId = item.id;
+      const date = new Date(item.updated_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+      el.innerHTML = `<div class="conv-item-title">${escapeHtml(item.title || '新对话')}</div>
+                      <div class="conv-item-date">${date}</div>
+                      <button class="conv-item-del" data-del-id="${item.id}" title="删除">✕</button>`;
+      container.appendChild(el);
+    });
+  }
+
+  // 只绑定一次，初始化时挂载到 conv-list
+  function initConvListEvents() {
+    const container = document.getElementById('conv-list');
+    if (!container) return;
+    container.addEventListener('click', async e => {
+      const delBtn = e.target.closest('[data-del-id]');
+      if (delBtn) {
+        e.stopPropagation();
+        if (!confirm('确定删除这条对话记录？')) return;
+        const id = +delBtn.dataset.delId;
+        const res = await fetch(`${API}/conversations/${id}`, { method: 'DELETE', credentials: 'include' });
+        if (!res.ok) { console.error('删除失败', res.status); return; }
+        if (currentConvId === id) {
+          currentConvId = null;
+          chatHistory = [];
+          historySummary = '';
+          messagesEl.innerHTML = '';
+          conversationStarted = false;
+          welcomeEl.classList.remove('hidden');
+          messagesEl.classList.add('hidden');
+          Canvas.clear();
+        }
+        loadConversations();
+        return;
+      }
+      const convEl = e.target.closest('.conv-item[data-conv-id]');
+      if (convEl) restoreConversation(+convEl.dataset.convId);
+    });
+  }
+
+  async function restoreConversation(convId) {
+    try {
+      const res = await fetch(`${API}/conversations/${convId}`, { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // Clear current UI
+      messagesEl.innerHTML = '';
+      chatHistory = [];
+      historySummary = '';
+      conversationStarted = true;
+      welcomeEl.classList.add('hidden');
+      messagesEl.classList.remove('hidden');
+
+      // Re-render messages and replay canvas events
+      Canvas.clear();
+      data.messages.forEach(m => {
+        if (m.role === 'user') appendUserMsg(m.content);
+        else if (m.role === 'assistant') {
+          const b = appendAssistantMsg(_injectChartRefs(marked.parse(m.content)));
+          if (b) _bindChartRefs(b);
+          if (m.canvas_json) {
+            try {
+              JSON.parse(m.canvas_json).forEach(evt => handleCanvasUpdate(evt));
+            } catch {}
+          }
+        }
+        chatHistory.push({ role: m.role, content: m.content });
+      });
+
+      currentConvId = convId;
+      // Highlight active item
+      document.querySelectorAll('.conv-item').forEach(el => {
+        el.classList.toggle('active', +el.dataset.convId === convId);
+      });
+      scrollBottom();
+    } catch {}
+  }
+
+  let _merchantKBItems = [];
+  let _platformKBItems = [];
+  let _brandBrief = null;
+
+  async function loadMerchantKB() {
+    try {
+      const res = await fetch(`${API}/kb/documents`, { credentials: 'include' });
+      if (!res.ok) return;
+      _merchantKBItems = await res.json();
+      renderMerchantKBSummary();
+    } catch {}
+  }
+
+  function renderMerchantKBSummary() {
+    const container = document.getElementById('merchant-kb-list');
+    if (!container) return;
+    container.innerHTML = '';
+    const merchant = currentUser?.merchant;
+    if (!merchant && !_merchantKBItems.length) {
+      container.innerHTML = '<div style="padding:5px 8px;font-size:12px;color:var(--text-muted)">暂无文件</div>';
+      return;
+    }
+    const totalChunks = _merchantKBItems.reduce((s, i) => s + (i.chunk_count || 0), 0);
+    const brandName = merchant?.name || '商家简报';
+    // Brief entry
+    const briefEl = document.createElement('div');
+    briefEl.className = 'kb-summary';
+    briefEl.innerHTML = `<span class="kb-status-dot indexed"></span><span class="kb-summary-text">${escapeHtml(brandName)} · 品牌简报</span><span class="kb-summary-arrow">›</span>`;
+    briefEl.addEventListener('click', () => openBriefModal());
+    container.appendChild(briefEl);
+    // Uploaded files summary (if any uploads beyond the generated brief)
+    const uploads = _merchantKBItems.filter(i => i.source_type === 'upload');
+    if (uploads.length) {
+      const uploadEl = document.createElement('div');
+      uploadEl.className = 'kb-summary';
+      const uploadChunks = uploads.reduce((s, i) => s + (i.chunk_count || 0), 0);
+      uploadEl.innerHTML = `<span class="kb-status-dot indexed"></span><span class="kb-summary-text">上传文件 ${uploads.length} 个 · ${uploadChunks} 条</span><span class="kb-summary-arrow">›</span>`;
+      uploadEl.addEventListener('click', () => openKBModal('merchant'));
+      container.appendChild(uploadEl);
+    }
+  }
+
+  async function loadPlatformKB() {
+    try {
+      const res = await fetch(`${API}/kb/platform`, { credentials: 'include' });
+      if (!res.ok) return;
+      _platformKBItems = await res.json();
+      renderPlatformKBSummary();
+    } catch {}
+  }
+
+  function renderPlatformKBSummary() {
+    const container = document.getElementById('platform-kb-list');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!_platformKBItems.length) {
+      container.innerHTML = '<div style="padding:5px 8px;font-size:12px;color:var(--text-muted)">暂无文件</div>';
+      return;
+    }
+    const totalChunks = _platformKBItems.reduce((s, i) => s + (i.chunk_count || 0), 0);
+    const el = document.createElement('div');
+    el.className = 'kb-summary';
+    el.innerHTML = `<span class="kb-status-dot indexed"></span><span class="kb-summary-text">平台知识库 · ${totalChunks} 条</span><span class="kb-summary-arrow">›</span>`;
+    el.addEventListener('click', () => openKBModal('platform'));
+    container.appendChild(el);
+  }
+
+  async function openBriefModal() {
+    const modal = document.getElementById('kb-modal-overlay');
+    const title = document.getElementById('kb-modal-title');
+    const body = document.getElementById('kb-modal-body');
+    const brandName = currentUser?.merchant?.name || '商家';
+    title.textContent = brandName + ' · 品牌简报';
+    body.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">加载中...</div>';
+    modal.classList.remove('hidden');
+    try {
+      const res = await fetch(`${API}/kb/brief`, { credentials: 'include' });
+      const data = await res.json();
+      if (!data.text) {
+        body.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">暂无品牌简报，请先完成品牌设置。</div>';
+        return;
+      }
+      body.innerHTML = renderBriefHTML(data.text, data.brand_name || brandName);
+    } catch {
+      body.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:32px;text-align:center">加载失败</div>';
+    }
+  }
+
+  function renderBriefHTML(markdown, brandName) {
+    // Parse markdown into structured sections
+    const lines = markdown.split('\n');
+    const sections = [];
+    let currentSection = null;
+    let summaryText = '';
+
+    const SECTION_ICONS = {
+      '平台扫描摘要': { icon: '🔍', bg: '#eff6ff', color: '#1d4ed8', highlight: true },
+      '品牌概况': { icon: '🏪', bg: '#dbeafe', color: '#1d4ed8' },
+      '产品与菜单': { icon: '☕', bg: '#fef3c7', color: '#92400e' },
+      '市场表现': { icon: '📈', bg: '#d1fae5', color: '#065f46' },
+      '竞争格局': { icon: '⚔️', bg: '#fce7f3', color: '#9d174d' },
+      '经营特点': { icon: '⚙️', bg: '#ede9fe', color: '#5b21b6' },
+      '营销策略': { icon: '📣', bg: '#fff7ed', color: '#c2410c' },
+    };
+
+    // Extract key stats from content
+    let storeCount = '', priceRange = '', stage = '';
+    const storeMatch = markdown.match(/(\d+)\s*家/);
+    if (storeMatch) storeCount = storeMatch[1] + ' 家';
+    const priceMatch = markdown.match(/Rp\s*[\d,]+\s*[–-]\s*[\d,]+/);
+    if (priceMatch) priceRange = priceMatch[0];
+    const stageMatch = markdown.match(/快速扩张|初创|稳定经营|增长停滞/);
+    if (stageMatch) stage = stageMatch[0];
+
+    let lastParentItem = null;
+    for (const line of lines) {
+      if (line.startsWith('## ')) {
+        if (currentSection) sections.push(currentSection);
+        const sectionName = line.slice(3).trim();
+        currentSection = { title: sectionName, items: [], meta: SECTION_ICONS[sectionName] || { icon: '📋', bg: '#f1f5f9', color: '#475569' } };
+        lastParentItem = null;
+      } else if (line.includes('【分析师总结') || line.includes('总结与启示')) {
+        if (currentSection) { sections.push(currentSection); currentSection = null; }
+        summaryText = line.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
+        lastParentItem = null;
+      } else if (summaryText && line.trim() && !line.startsWith('#')) {
+        summaryText += ' ' + line.replace(/\*\*/g, '').trim();
+      } else if (currentSection) {
+        // Sub-bullet: starts with 2+ spaces + * or -
+        const isSubBullet = /^(\s{2,}|\t)[*-]/.test(line);
+        // Top-level bullet: * item, - item
+        const isTopBullet = /^[*-]\s+/.test(line);
+        // Bold-label line: **label**：content  or  **label**: content (Gemini output format)
+        const boldLabelMatch = !isSubBullet && !isTopBullet && line.match(/^\*\*(.+?)\*\*[：:]\s*(.*)/);
+
+        if (isSubBullet) {
+          const text = line.replace(/^\s+[*-]\s+/, '').trim();
+          if (!text) continue;
+          if (lastParentItem !== null) {
+            currentSection.items[lastParentItem] += '\n  › ' + text;
+          } else {
+            currentSection.items.push('  › ' + text);
+          }
+        } else if (boldLabelMatch) {
+          const label = boldLabelMatch[1].trim();
+          const content = boldLabelMatch[2].trim();
+          const text = content ? `**${label}**：${content}` : `**${label}**`;
+          lastParentItem = currentSection.items.length;
+          currentSection.items.push(text);
+        } else if (isTopBullet) {
+          const text = line.replace(/^[*-]\s+/, '').trim();
+          if (!text) continue;
+          lastParentItem = currentSection.items.length;
+          currentSection.items.push(text);
+        } else if (line.trim() && !line.startsWith('#')) {
+          const trimmed = line.trim();
+          if (lastParentItem !== null && currentSection.title !== '平台扫描摘要') {
+            // Continuation of previous bold-label item
+            currentSection.items[lastParentItem] += ' ' + trimmed;
+          } else {
+            // Plain text line (scan summary sentences — each on its own line)
+            lastParentItem = currentSection.items.length;
+            currentSection.items.push(trimmed);
+          }
+        }
+      }
+    }
+    if (currentSection) sections.push(currentSection);
+
+    // Build HTML
+    let html = '';
+
+    // Hero banner
+    html += `<div class="brief-hero">
+      <div class="brief-avatar">🏪</div>
+      <div>
+        <div class="brief-hero-name">${escapeHtml(brandName)}</div>
+        <div class="brief-hero-sub">品牌经营简报</div>
+      </div>
+    </div>`;
+
+    // Pull out scan summary section to render first
+    const scanIdx = sections.findIndex(s => s.title === '平台扫描摘要');
+    const scanSection = scanIdx >= 0 ? sections.splice(scanIdx, 1)[0] : null;
+
+    // Scan summary card — right after hero, before stats
+    // New users: use dedicated scan section; old users: fall back to summaryText
+    const scanText = scanSection?.items.length
+      ? scanSection.items.join(' ')
+      : summaryText ? summaryText.replace(/^【.+?】/, '').trim() : '';
+    if (scanText) {
+      // Split into sentences for paragraph display
+      const sentences = scanText
+        .split(/(?<=[。！？\n])\s*/)
+        .map(s => s.trim())
+        .filter(s => s.length > 2);
+      const icons = ['💡', '⚡', '🎯'];
+      const sentenceHtml = sentences.slice(0, 3).map((s, i) =>
+        `<div style="display:flex;align-items:flex-start;gap:8px;${i > 0 ? 'margin-top:8px;padding-top:8px;border-top:1px solid #bfdbfe' : ''}">
+          <span style="flex-shrink:0;font-size:14px">${icons[i] || '•'}</span>
+          <div style="font-size:13px;line-height:1.65;color:#1e3a8a">${inlineMd(s)}</div>
+        </div>`
+      ).join('');
+      html += `<div style="padding:14px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe">
+        <div style="font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px">🔍 平台首次扫描</div>
+        ${sentenceHtml}
+      </div>`;
+      summaryText = '';
+    }
+
+    // Stats bar
+    if (storeCount || priceRange || stage) {
+      html += `<div class="brief-stats">`;
+      if (storeCount) html += `<div class="brief-stat"><div class="brief-stat-value">${escapeHtml(storeCount)}</div><div class="brief-stat-label">门店规模</div></div>`;
+      if (priceRange) html += `<div class="brief-stat"><div class="brief-stat-value" style="font-size:12px">${escapeHtml(priceRange)}</div><div class="brief-stat-label">价格带</div></div>`;
+      if (stage) html += `<div class="brief-stat"><div class="brief-stat-value" style="font-size:13px;color:#059669">${escapeHtml(stage)}</div><div class="brief-stat-label">经营阶段</div></div>`;
+      html += `</div>`;
+    }
+
+    // Sections
+    html += `<div class="brief-sections">`;
+    for (const sec of sections) {
+      if (!sec.items.length) continue;
+      html += `<div class="brief-section">
+        <div class="brief-section-header">
+          <div class="brief-section-icon" style="background:${sec.meta.bg}">${sec.meta.icon}</div>
+          <div class="brief-section-title">${escapeHtml(sec.title)}</div>
+        </div>
+        <div class="brief-section-body">`;
+      for (const item of sec.items.slice(0, 10)) {
+        if (item.startsWith('  › ')) {
+          const safe = inlineMd(item.slice(4));
+          html += `<div class="brief-item brief-sub"><div class="brief-item-dot sub"></div><div>${safe}</div></div>`;
+        } else {
+          const parts = item.split('\n  › ');
+          const mainRaw = parts[0];
+          const isLabelOnly = /：$/.test(mainRaw.replace(/\*\*/g, '')) && parts.length > 1;
+          if (isLabelOnly) {
+            html += `<div class="brief-item"><div class="brief-item-dot"></div><div style="font-weight:600;color:var(--text-muted);font-size:12px">${inlineMd(mainRaw)}</div></div>`;
+          } else {
+            html += `<div class="brief-item"><div class="brief-item-dot"></div><div>${inlineMd(mainRaw)}</div></div>`;
+          }
+          for (const sub of parts.slice(1)) {
+            html += `<div class="brief-item brief-sub"><div class="brief-item-dot sub"></div><div>${inlineMd(sub)}</div></div>`;
+          }
+        }
+      }
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+
+    // Summary
+    if (summaryText) {
+      const cleanSummary = inlineMd(summaryText.replace(/^【.+?】/, '').trim());
+      if (cleanSummary) {
+        html += `<div class="brief-summary">💡 ${cleanSummary}</div>`;
+      }
+    }
+
+    return html;
+  }
+
+  function inlineMd(text) {
+    return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function openKBModal(type) {
+    const items = type === 'platform' ? _platformKBItems : _merchantKBItems.filter(i => i.source_type === 'upload');
+    const title = type === 'platform' ? '平台知识库' : '上传文件';
+    document.getElementById('kb-modal-title').textContent = title;
+    const body = document.getElementById('kb-modal-body');
+    body.innerHTML = '';
+    if (!items.length) {
+      body.innerHTML = '<div style="color:var(--text-muted);font-size:13px">暂无文件</div>';
+    } else {
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'kb-detail-item';
+        const dot = `<span class="kb-status-dot ${item.status}" style="flex-shrink:0"></span>`;
+        const name = `<span class="kb-detail-name">${escapeHtml(item.original_name)}</span>`;
+        const meta = `<span class="kb-detail-meta">${item.chunk_count || 0} 条</span>`;
+        const del = type === 'merchant'
+          ? `<button class="kb-detail-del" title="删除" data-id="${item.id}">✕</button>` : '';
+        row.innerHTML = `${dot}${name}${meta}${del}`;
+        if (type === 'merchant') {
+          row.querySelector('.kb-detail-del')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!confirm(`删除「${item.original_name}」？`)) return;
+            await fetch(`${API}/kb/documents/${item.id}`, { method: 'DELETE', credentials: 'include' });
+            document.getElementById('kb-modal-overlay').classList.add('hidden');
+            loadMerchantKB();
+          });
+        }
+        body.appendChild(row);
+      });
+    }
+    document.getElementById('kb-modal-overlay').classList.remove('hidden');
+  }
+
+  document.getElementById('kb-modal-close').addEventListener('click', () => {
+    document.getElementById('kb-modal-overlay').classList.add('hidden');
+  });
+  document.getElementById('kb-modal-overlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('kb-modal-overlay'))
+      document.getElementById('kb-modal-overlay').classList.add('hidden');
+  });
+
+  async function persistTurn(userMsg, assistantMsg, canvasEvts = []) {
+    if (!currentUser) return;
+    try {
+      if (!currentConvId) {
+        const res = await fetch(`${API}/conversations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ merchant_id: currentUser.merchant?.id || null }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        currentConvId = data.id;
+        loadConversations();
+      }
+      await fetch(`${API}/conversations/${currentConvId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ messages: [
+          { role: 'user', content: userMsg },
+          { role: 'assistant', content: assistantMsg, canvas_json: canvasEvts.length ? JSON.stringify(canvasEvts) : null },
+        ]}),
+      });
+      loadConversations();
+    } catch {}
+  }
+
+  // ── Sidebar toggle & drag ─────────────────────────
+  function _initSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarDivider = document.getElementById('sidebar-divider');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+
+    toggleBtn.addEventListener('click', () => {
+      const collapsed = sidebar.classList.toggle('collapsed');
+      toggleBtn.textContent = collapsed ? '›' : '‹';
+    });
+
+    let isDraggingSidebar = false;
+    sidebarDivider.addEventListener('mousedown', e => {
+      if (e.target === toggleBtn) return;
+      isDraggingSidebar = true;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+    window.addEventListener('mousemove', e => {
+      if (!isDraggingSidebar) return;
+      const content = document.getElementById('content');
+      const rect = content.getBoundingClientRect();
+      const newWidth = e.clientX - rect.left;
+      if (newWidth >= 160 && newWidth <= 400) {
+        sidebar.style.width = newWidth + 'px';
+        sidebar.classList.remove('collapsed');
+        toggleBtn.textContent = '‹';
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      if (!isDraggingSidebar) return;
+      isDraggingSidebar = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  }
+
+  // ── User dropdown ─────────────────────────────────
+  function _initUserDropdown() {
+    const avatar = document.getElementById('user-avatar');
+    const dropdown = document.getElementById('user-dropdown');
+    avatar.addEventListener('click', e => {
+      e.stopPropagation();
+      dropdown.classList.toggle('hidden');
+    });
+    document.addEventListener('click', () => dropdown.classList.add('hidden'));
+
+    document.getElementById('admin-link').addEventListener('click', () => {
+      window.location.href = '/admin-login.html';
+    });
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
+      window.location.replace('/login.html');
+    });
+
+    // Sidebar footer buttons
+    document.getElementById('sidebar-logout-btn').addEventListener('click', async () => {
+      await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
+      window.location.replace('/login.html');
+    });
+    document.getElementById('sidebar-settings-btn').addEventListener('click', () => {
+      document.getElementById('settings-btn').click();
+    });
+  }
+
+  // ── New conversation button ───────────────────────
+  function _initNewConvBtn() {
+    document.getElementById('new-conv-btn').addEventListener('click', () => {
+      currentConvId = null;
+      messagesEl.innerHTML = '';
+      chatHistory = [];
+      historySummary = '';
+      conversationStarted = false;
+      document.getElementById('welcome').style.display = '';
+      document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+      Canvas.clear();
+    });
+  }
+
+  // ── Sidebar KB upload trigger ─────────────────────
+  function _initKbUploadTrigger() {
+    const kbFileInput = document.createElement('input');
+    kbFileInput.type = 'file';
+    kbFileInput.multiple = true;
+    kbFileInput.accept = '.xlsx,.xls,.csv,.pdf,.txt,.md,.docx,.doc';
+    kbFileInput.style.display = 'none';
+    document.body.appendChild(kbFileInput);
+
+    document.getElementById('kb-upload-trigger').addEventListener('click', () => kbFileInput.click());
+
+    kbFileInput.addEventListener('change', async () => {
+      const files = Array.from(kbFileInput.files);
+      kbFileInput.value = '';
+      if (!files.length) return;
+      for (const f of files) {
+        const fd = new FormData();
+        fd.append('file', f);
+        try {
+          await fetch(`${API}/upload`, { method: 'POST', body: fd, credentials: 'include' });
+        } catch {}
+      }
+      loadMerchantKB();
+    });
+  }
+
+  function _setStopMode(on) {
+    const sendIcon = sendBtn.querySelector('.send-icon');
+    const stopIcon = sendBtn.querySelector('.stop-icon');
+    if (on) {
+      sendBtn.classList.add('stop');
+      sendBtn.disabled = false;
+      sendIcon.style.display = 'none';
+      stopIcon.style.display = '';
+      sendBtn.title = '停止';
+    } else {
+      sendBtn.classList.remove('stop');
+      sendIcon.style.display = '';
+      stopIcon.style.display = 'none';
+      sendBtn.title = '发送';
+    }
+  }
+  let pendingFiles = [];
+  let modelPreference = localStorage.getItem(MODEL_KEY) || 'auto';
+  let lastStatus = null;
+  let canvasCollapsed = false;
+  let chatHistory = []; // [{role:'user'|'assistant', content:'...'}]
+  let historySummary = ''; // 压缩后的历史摘要
+  const SUMMARY_TRIGGER = 8;  // 超过8轮时触发压缩
+  const KEEP_RECENT = 4;      // 压缩后保留最近4轮原始对话
+
+  // ── DOM refs ──────────────────────────────────────
+  const welcomeEl    = document.getElementById('welcome');
+  const messagesEl   = document.getElementById('messages');
+  const msgInput     = document.getElementById('msg-input');
+  const sendBtn      = document.getElementById('send-btn');
+  const uploadBtn    = document.getElementById('upload-btn');
+  const fileInput    = document.getElementById('file-input');
+  const fileListEl   = document.getElementById('file-list');
+  const modelTag     = document.getElementById('model-tag');
+  const statusDot    = document.getElementById('status-dot');
+  const statusText   = document.getElementById('status-text');
+  const modalOverlay = document.getElementById('modal-overlay');
+  const canvasPane   = document.getElementById('canvas-pane');
+  const canvasBody   = document.getElementById('canvas-body');
+  const divider      = document.getElementById('divider');
+  const toggleBtn    = document.getElementById('canvas-toggle');
+  const clearBtn     = document.getElementById('canvas-clear-btn');
+
+  marked.setOptions({ breaks: true, gfm: true });
+
+  // ── Modal (legacy config — now hidden, replaced by auth flow) ────────────
+  modalOverlay.classList.add('hidden');
+
+  document.getElementById('modal-save-btn').addEventListener('click', async () => {
+    const name = document.getElementById('merchant-name-input').value.trim();
+    const errEl = document.getElementById('merchant-settings-error');
+    errEl.textContent = '';
+    if (!name) { errEl.textContent = '请输入商家名称'; return; }
+    try {
+      const res = await fetch(`${API}/onboarding/bind`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, place_ids: [], store_count: 1, merchant_type: 'existing' }),
+      });
+      if (!res.ok) { errEl.textContent = '保存失败，请重试'; return; }
+      const meRes = await fetch(`${API}/auth/me`, { credentials: 'include' });
+      if (meRes.ok) currentUser = await meRes.json();
+      const sidebarMerchant = document.getElementById('sidebar-merchant-name');
+      if (sidebarMerchant) sidebarMerchant.textContent = `🏪 ${name}`;
+      modalOverlay.classList.add('hidden');
+    } catch { errEl.textContent = '网络错误，请重试'; }
+  });
+
+  document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+    modalOverlay.classList.add('hidden');
+  });
+
+  document.getElementById('rebind-btn').addEventListener('click', () => {
+    window.location.replace('/onboarding.html?rebind=1');
+  });
+
+  // ── Settings button ────────────────────────────────────────────────────
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    const merchant = currentUser?.merchant;
+    document.getElementById('merchant-info-name').textContent = merchant?.name || '未绑定';
+    let meta = '';
+    if (merchant?.business_type) meta += `业态：${merchant.business_type}  `;
+    if (merchant?.address) meta += `地址：${merchant.address}`;
+    document.getElementById('merchant-info-meta').textContent = meta || '暂无详细信息';
+    document.getElementById('merchant-name-input').value = merchant?.name || '';
+    document.getElementById('merchant-settings-error').textContent = '';
+    modalOverlay.classList.remove('hidden');
+  });
+
+  // ── Model switch ──────────────────────────────────
+  // modelPreference format: "provider:model" e.g. "gemini:gemini-2.5-pro"
+  // or "auto" for server default
+  const PROVIDER_LABELS = { gemini: 'Gemini', claude: 'Claude', openai: 'ChatGPT', ollama: '本地' };
+  const msBtn      = document.getElementById('model-switch-btn');
+  const msLabel    = document.getElementById('ms-label');
+  const msDrop     = document.getElementById('model-dropdown');
+
+  function buildModelDropdown(providers) {
+    msDrop.innerHTML = '';
+    if (!providers || providers.length === 0) {
+      msDrop.innerHTML = '<div class="ms-provider-header" style="padding:10px 14px;color:var(--text-muted)">无可用模型</div>';
+      return;
+    }
+    providers.forEach((p, idx) => {
+      if (idx > 0) {
+        const div = document.createElement('div');
+        div.className = 'ms-divider';
+        msDrop.appendChild(div);
+      }
+      const hdr = document.createElement('div');
+      hdr.className = 'ms-provider-header';
+      hdr.textContent = PROVIDER_LABELS[p.provider] || p.provider;
+      msDrop.appendChild(hdr);
+      (p.models || []).forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'ms-model-item';
+        const key = `${p.provider}:${m}`;
+        item.dataset.key = key;
+        item.textContent = m;
+        if (key === modelPreference) item.classList.add('active');
+        item.addEventListener('click', () => {
+          modelPreference = key;
+          localStorage.setItem(MODEL_KEY, key);
+          updateModelLabel();
+          msDrop.classList.add('hidden');
+          // re-mark active
+          msDrop.querySelectorAll('.ms-model-item').forEach(el => {
+            el.classList.toggle('active', el.dataset.key === key);
+          });
+        });
+        msDrop.appendChild(item);
+      });
+    });
+  }
+
+  function updateModelLabel() {
+    if (modelPreference === 'auto' || !modelPreference.includes(':')) {
+      msLabel.textContent = lastStatus ? (lastStatus.model_name || '自动') : '自动';
+    } else {
+      const [provider, model] = modelPreference.split(':');
+      const provLabel = PROVIDER_LABELS[provider] || provider;
+      msLabel.textContent = `${provLabel} · ${model}`;
+    }
+  }
+
+  msBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    msDrop.classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => msDrop.classList.add('hidden'));
+
+  // ── Status polling ────────────────────────────────
+  async function pollStatus() {
+    try {
+      const res  = await fetch(`${API}/status`, { signal: AbortSignal.timeout(4000) });
+      const data = await res.json();
+      statusDot.className = 'online';
+      statusText.textContent = '在线';
+      lastStatus = data;
+      buildModelDropdown(data.available_providers || []);
+      updateModelLabel();
+      const kb = document.getElementById('kb-docs');
+    } catch(_) {
+      statusDot.className = 'offline';
+      statusText.textContent = '离线';
+    }
+  }
+  pollStatus();
+  setInterval(pollStatus, 15000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') loadPlatformKB();
+  });
+
+  // ── Canvas module registry ────────────────────────
+  // Each module: { label, icon, replace, render(data, container) }
+  const _moduleRegistry = {};
+  const _moduleInstances = {}; // type → DOM element (for replace=true modules)
+  const _echartsInstances = []; // 所有 ECharts 实例，用于 dispose/resize
+
+  const Canvas = {
+    register(type, def) {
+      _moduleRegistry[type] = def;
+    },
+
+    dispatch(update) {
+      const { type, ...data } = update;
+      const def = _moduleRegistry[type];
+      if (!def) { console.warn('Canvas: unknown module type', type); return; }
+      console.log('[Canvas.dispatch]', type, JSON.stringify(data).slice(0, 100));
+
+      // Remove empty state
+      const empty = document.getElementById('canvas-empty-state');
+      if (empty) empty.remove();
+
+      clearBtn.style.display = '';
+
+      if (def.replace && _moduleInstances[type]) {
+        // Re-render into existing wrapper
+        const wrapper = _moduleInstances[type];
+        const body = wrapper.querySelector('.module-body');
+        body.innerHTML = '';
+        try { def.render(data, body); } catch(e) { console.error('[Canvas.render error]', type, e); }
+      } else {
+        // Create new module wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'canvas-module';
+        wrapper.dataset.moduleType = type;
+
+        if (def.label) {
+          const label = document.createElement('div');
+          label.className = 'module-label';
+          label.textContent = (def.icon ? def.icon + ' ' : '') + def.label;
+          wrapper.appendChild(label);
+        }
+
+        const body = document.createElement('div');
+        body.className = 'module-body';
+        body.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+        wrapper.appendChild(body);
+        try { def.render(data, body); } catch(e) { console.error('[Canvas.render error]', type, e); }
+
+        if (def.replace) {
+          _moduleInstances[type] = wrapper;
+        }
+
+        // analysis_card always goes to the top; everything else appends to bottom
+        if (type === 'analysis_card') {
+          canvasBody.insertBefore(wrapper, canvasBody.firstChild);
+        } else {
+          canvasBody.appendChild(wrapper);
+        }
+      }
+
+      // Expand canvas if collapsed
+      if (canvasCollapsed) toggleCanvas();
+
+      // Scroll to bottom of canvas
+      canvasBody.scrollTop = canvasBody.scrollHeight;
+    },
+
+    clear() {
+      _echartsInstances.forEach(c => { try { c.dispose(); } catch(_) {} });
+      _echartsInstances.length = 0;
+      canvasBody.innerHTML = '';
+      Object.keys(_moduleInstances).forEach(k => delete _moduleInstances[k]);
+      const empty = document.createElement('div');
+      empty.id = 'canvas-empty-state';
+      empty.innerHTML = `<span class="empty-icon material-icons">dashboard</span><span>对话中自动生成的内容将显示在这里</span>`;
+      canvasBody.appendChild(empty);
+      clearBtn.style.display = 'none';
+    },
+  };
+
+  clearBtn.addEventListener('click', () => Canvas.clear());
+
+  // 画布宽度变化时 resize 所有 ECharts 实例（拖拽分栏时触发）
+  let _resizeTimer = null;
+  new ResizeObserver(() => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => {
+      _echartsInstances.forEach(c => { try { c.resize(); } catch(_) {} });
+    }, 60);
+  }).observe(canvasPane);
+
+  // ── ECharts helpers ───────────────────────────────
+  const STORE_PALETTE = ['#003178', '#2563eb', '#ef4444', '#f59e0b', '#22c55e', '#8b5cf6'];
+
+  function _makeChartEl(height = 220) {
+    const el = document.createElement('div');
+    el.style.cssText = `width:100%;height:${height}px;`;
+    return el;
+  }
+
+  function _card(title, chartEl, chartId) {
+    const card = document.createElement('div');
+    card.className = 'canvas-chart-card';
+    if (chartId) card.dataset.chartId = chartId;
+    card.innerHTML = `<div class="canvas-chart-title">${title}</div>`;
+    card.appendChild(chartEl);
+    return card;
+  }
+
+  function _initChart(el, option) {
+    const inst = echarts.init(el, null, { renderer: 'svg' });
+    inst.setOption(option);
+    _echartsInstances.push(inst);
+    // Wait for container to have actual width before sizing
+    const _tryResize = (attempts) => {
+      if (el.offsetWidth > 0) {
+        inst.resize();
+      } else if (attempts > 0) {
+        setTimeout(() => _tryResize(attempts - 1), 50);
+      }
+    };
+    requestAnimationFrame(() => _tryResize(10));
+    return inst;
+  }
+
+  const _baseAxis = {
+    axisLine: { lineStyle: { color: '#e7e8e9' } },
+    axisTick: { show: false },
+    axisLabel: { color: '#6b7280', fontSize: 10 },
+    splitLine: { lineStyle: { color: '#f1f2f3' } },
+  };
+
+  // ── Register: analysis_card ──────────────────────
+  Canvas.register('analysis_card', {
+    label: '分析结论',
+    icon: '🧠',
+    replace: true,
+    render({ card_type, severity, title, subtitle, fields, actions }, container) {
+      const severityIcon = { high: '🔴', medium: '🟡', low: '🟢' };
+      const typeIcon = { diagnosis: '🔴', opportunity: '🔵', paradox: '🟣', action: '🟢' };
+      const icon = severityIcon[severity] || typeIcon[card_type] || '💡';
+
+      const iconClass = severity
+        ? `severity-${severity}`
+        : `type-${card_type || 'action'}`;
+
+      const badgeClass = { high: 'badge-high', medium: 'badge-medium', low: 'badge-low' }[severity] || '';
+      const severityLabel = { high: '紧急', medium: '关注', low: '正常' }[severity] || '';
+
+      const card = document.createElement('div');
+      card.className = 'analysis-card';
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'analysis-card-header';
+      header.innerHTML = `
+        <div class="analysis-card-icon ${iconClass}">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div class="analysis-card-title">${escapeHtml(title || '')}</div>
+            ${severity ? `<span class="severity-badge ${badgeClass}">${severityLabel}</span>` : ''}
+          </div>
+          ${subtitle ? `<div class="analysis-card-subtitle">${escapeHtml(subtitle)}</div>` : ''}
+        </div>`;
+      card.appendChild(header);
+
+      // Fields (key-value rows)
+      if (fields && fields.length) {
+        const body = document.createElement('div');
+        body.className = 'analysis-card-body';
+        body.innerHTML = '<div class="analysis-divider"></div>';
+        fields.forEach(({ label, value }) => {
+          const row = document.createElement('div');
+          row.className = 'analysis-row';
+          row.innerHTML = `<div class="analysis-row-label">${escapeHtml(label)}</div><div class="analysis-row-value">${escapeHtml(value)}</div>`;
+          body.appendChild(row);
+        });
+        card.appendChild(body);
+      }
+
+      // Actions
+      if (actions && actions.length) {
+        const actSection = document.createElement('div');
+        actSection.className = 'analysis-actions';
+        actSection.innerHTML = '<div class="analysis-divider" style="margin-bottom:6px"></div>';
+        const dotClass = { now: 'dot-now', week: 'dot-week', later: 'dot-later', track: 'dot-track' };
+        const dotLabel = { now: '即', week: '周', later: '后', track: '跟' };
+        actions.forEach(({ urgency, task }) => {
+          const item = document.createElement('div');
+          item.className = 'analysis-action-item';
+          const dc = dotClass[urgency] || 'dot-week';
+          const dl = dotLabel[urgency] || '•';
+          item.innerHTML = `<div class="analysis-action-dot ${dc}">${dl}</div><div>${escapeHtml(task)}</div>`;
+          actSection.appendChild(item);
+        });
+        card.appendChild(actSection);
+      }
+
+      container.appendChild(card);
+    },
+  });
+
+  // ── Register: sales_chart ─────────────────────────
+  Canvas.register('sales_chart', {
+    label: '销售数据',
+    icon: '📊',
+    replace: true,
+    render({ data: charts, records_count }, container) {
+      // 销毁旧实例
+      _echartsInstances.forEach(c => c.dispose());
+      _echartsInstances.length = 0;
+
+      // Collapsible toggle header
+      const toggle = document.createElement('div');
+      toggle.className = 'chart-section-toggle';
+      const recordText = records_count ? `${records_count} 条记录` : '数据图表';
+      toggle.innerHTML = `
+        <div class="chart-section-toggle-label">📊 数据支撑 · <span style="font-weight:400;text-transform:none;letter-spacing:0">${recordText}</span></div>
+        <span class="chart-section-arrow">▼</span>`;
+      container.appendChild(toggle);
+
+      const chartBody = document.createElement('div');
+      chartBody.className = 'chart-section-body';
+      chartBody.style.maxHeight = '9999px';
+      toggle.querySelector('.chart-section-arrow').classList.add('open');
+      container.appendChild(chartBody);
+
+      toggle.addEventListener('click', () => {
+        const isOpen = !chartBody.classList.contains('collapsed');
+        if (isOpen) {
+          chartBody.style.maxHeight = chartBody.scrollHeight + 'px';
+          requestAnimationFrame(() => {
+            chartBody.style.maxHeight = '0px';
+            chartBody.classList.add('collapsed');
+            toggle.querySelector('.chart-section-arrow').classList.remove('open');
+          });
+        } else {
+          chartBody.classList.remove('collapsed');
+          chartBody.style.maxHeight = chartBody.scrollHeight + 'px';
+          toggle.querySelector('.chart-section-arrow').classList.add('open');
+          setTimeout(() => { chartBody.style.maxHeight = '9999px'; }, 310);
+          // Resize charts after expand
+          setTimeout(() => _echartsInstances.forEach(c => { try { c.resize(); } catch(_){} }), 320);
+        }
+      });
+
+      // All charts render into chartBody from here
+      container = chartBody;
+
+      // ── 1. 各门店销售对比（双轴柱+折线）
+      const sc = charts.store_comparison;
+      if (sc?.labels?.length) {
+        const el = _makeChartEl(200);
+        container.appendChild(_card('各门店销售对比', el));
+        const revenueDs = sc.datasets.find(d => d.label?.includes('销售额') || d.yAxisID === 'y');
+        const orderDs   = sc.datasets.find(d => d.label?.includes('订单') || d.yAxisID === 'y1');
+        _initChart(el, {
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+          legend: { bottom: 0, textStyle: { fontSize: 11, color: '#6b7280' } },
+          grid: { top: 10, left: 10, right: 10, bottom: 36, containLabel: true },
+          xAxis: { type: 'category', data: sc.labels, ..._baseAxis },
+          yAxis: [
+            { type: 'value', name: 'IDR', ..._baseAxis, axisLabel: { ...(_baseAxis.axisLabel), formatter: v => (v/1e6).toFixed(0)+'M' } },
+            { type: 'value', name: '订单', ..._baseAxis, splitLine: { show: false } },
+          ],
+          series: [
+            revenueDs && { name: revenueDs.label, type: 'bar', yAxisIndex: 0, data: revenueDs.data,
+              itemStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0,color:'#2563eb'},{offset:1,color:'#003178'}]) },
+              barMaxWidth: 40 },
+            orderDs && { name: orderDs.label, type: 'line', yAxisIndex: 1, data: orderDs.data,
+              symbol: 'circle', symbolSize: 6, lineStyle: { color: '#ef4444', width: 2 },
+              itemStyle: { color: '#ef4444' } },
+          ].filter(Boolean),
+        });
+      }
+
+      // ── 2. 每日销售趋势（多门店折线）
+      const st = charts.sales_trend;
+      if (st?.labels?.length) {
+        const el = _makeChartEl(200);
+        container.appendChild(_card('每日销售趋势', el));
+        _initChart(el, {
+          tooltip: { trigger: 'axis', formatter: params =>
+            params[0].axisValue + '<br>' +
+            params.map(p => `${p.marker}${p.seriesName}: ${(p.value/1e6).toFixed(2)}M IDR`).join('<br>')
+          },
+          legend: { bottom: 0, textStyle: { fontSize: 11, color: '#6b7280' } },
+          grid: { top: 10, left: 10, right: 10, bottom: 36, containLabel: true },
+          xAxis: { type: 'category', data: st.labels, boundaryGap: false, ...(_baseAxis),
+            axisLabel: { ...(_baseAxis.axisLabel), rotate: 30, formatter: v => v.slice(5) } },
+          yAxis: { type: 'value', ..._baseAxis,
+            axisLabel: { ...(_baseAxis.axisLabel), formatter: v => (v/1e6).toFixed(0)+'M' } },
+          series: st.datasets.map((ds, i) => ({
+            name: ds.label,
+            type: 'line',
+            smooth: true,
+            data: ds.data,
+            symbol: 'none',
+            lineStyle: { color: STORE_PALETTE[i % STORE_PALETTE.length], width: 2 },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,
+              [{offset:0, color: STORE_PALETTE[i % STORE_PALETTE.length]+'44'},
+               {offset:1, color: STORE_PALETTE[i % STORE_PALETTE.length]+'08'}]) },
+          })),
+        });
+      }
+
+      // ── 3. 热销商品（水平条形，按门店堆叠）
+      const ti = charts.top_items;
+      if (ti?.labels?.length) {
+        const h = Math.max(180, ti.labels.length * 28 + 60);
+        const el = _makeChartEl(h);
+        container.appendChild(_card('热销商品（销量）', el));
+        _initChart(el, {
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+          legend: { bottom: 0, textStyle: { fontSize: 11, color: '#6b7280' } },
+          grid: { top: 10, left: 10, right: 16, bottom: 36, containLabel: true },
+          xAxis: { type: 'value', ..._baseAxis },
+          yAxis: { type: 'category', data: [...ti.labels].reverse(), ...(_baseAxis), axisLabel: { ...(_baseAxis.axisLabel), width: 100, overflow: 'truncate' } },
+          series: ti.datasets.map((ds, i) => ({
+            name: ds.label,
+            type: 'bar',
+            stack: 'total',
+            data: [...ds.data].reverse(),
+            itemStyle: { color: STORE_PALETTE[i % STORE_PALETTE.length] },
+            barMaxWidth: 20,
+          })),
+        });
+      }
+
+      // ── 4. 星期销售分布（按门店分组柱）
+      const hh = charts.hourly_heatmap;
+      if (hh?.labels?.length) {
+        const el = _makeChartEl(190);
+        container.appendChild(_card('星期销售分布', el));
+        _initChart(el, {
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+          legend: { bottom: 0, textStyle: { fontSize: 11, color: '#6b7280' } },
+          grid: { top: 10, left: 10, right: 10, bottom: 36, containLabel: true },
+          xAxis: { type: 'category', data: hh.labels, ...(_baseAxis) },
+          yAxis: { type: 'value', ..._baseAxis,
+            axisLabel: { ...(_baseAxis.axisLabel), formatter: v => (v/1e6).toFixed(0)+'M' } },
+          series: hh.datasets.map((ds, i) => ({
+            name: ds.label,
+            type: 'bar',
+            data: ds.data,
+            itemStyle: { color: STORE_PALETTE[i % STORE_PALETTE.length] },
+            barMaxWidth: 24,
+          })),
+        });
+      }
+
+      // ── 5. 渠道收入占比（环形图）
+      const cb = charts.channel_breakdown;
+      if (cb?.labels?.length) {
+        const el = _makeChartEl(190);
+        container.appendChild(_card('渠道收入占比', el));
+        const vals = cb.datasets[0]?.data || [];
+        _initChart(el, {
+          tooltip: { trigger: 'item', formatter: p => `${p.name}<br>${(p.value/1e6).toFixed(2)}M IDR (${p.percent}%)` },
+          legend: { bottom: 0, textStyle: { fontSize: 11, color: '#6b7280' } },
+          series: [{
+            type: 'pie',
+            radius: ['38%', '65%'],
+            center: ['50%', '44%'],
+            data: cb.labels.map((l, i) => ({ name: l, value: vals[i] })),
+            label: { fontSize: 11, color: '#6b7280' },
+            emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,0.15)' } },
+          }],
+          color: STORE_PALETTE,
+        });
+      }
+    },
+  });
+
+  // ── Register: competitor_map ──────────────────────
+  let _mapInstance = null;
+  Canvas.register('competitor_map', {
+    label: '周边竞品',
+    icon: '🔍',
+    replace: true,
+    render({ competitors, centerLat, centerLng }, container) {
+      // Map
+      if (centerLat && centerLng && typeof mapboxgl !== 'undefined') {
+        const mapEl = document.createElement('div');
+        mapEl.style.cssText = 'height:200px;border-radius:var(--radius-card);overflow:hidden;border:1px solid var(--border);flex-shrink:0;';
+        container.appendChild(mapEl);
+
+        if (_mapInstance) { _mapInstance.remove(); _mapInstance = null; }
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        _mapInstance = new mapboxgl.Map({
+          container: mapEl,
+          style: 'mapbox://styles/mapbox/light-v11',
+          center: [centerLng, centerLat],
+          zoom: 14,
+        });
+        _mapInstance.on('load', () => {
+          competitors.forEach(c => {
+            if (!c.lat || !c.lng) return;
+            new mapboxgl.Marker({ color: '#003178' })
+              .setLngLat([c.lng, c.lat])
+              .setPopup(new mapboxgl.Popup({ offset:25 }).setText(c.name))
+              .addTo(_mapInstance);
+          });
+        });
+      }
+
+      // List
+      competitors.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'competitor-card';
+        const price = c.price_level != null ? '$'.repeat(c.price_level + 1) : '';
+        card.innerHTML = `
+          <div class="comp-name">${escapeHtml(c.name)}</div>
+          <div class="comp-meta">
+            ${c.rating ? `<span class="comp-badge">⭐ ${c.rating} (${c.reviews || 0})</span>` : ''}
+            ${price ? `<span class="comp-badge">${price}</span>` : ''}
+            <span style="color:var(--text-muted)">${escapeHtml(c.address || '')}</span>
+          </div>`;
+        container.appendChild(card);
+      });
+    },
+  });
+
+  // ── Register: action_plan ─────────────────────────
+  Canvas.register('action_plan', {
+    label: '行动方案',
+    icon: '✅',
+    replace: false,
+    render({ items }, container) {
+      if (!items || items.length === 0) return;
+      items.forEach((item, i) => {
+        const el = document.createElement('div');
+        el.className = 'action-item';
+        el.innerHTML = `<div class="action-num">${i+1}</div><div class="action-text">${escapeHtml(item)}</div>`;
+        container.appendChild(el);
+      });
+    },
+  });
+
+  Canvas.register('llm_chart', {
+    label: 'AI 图表',
+    icon: '📊',
+    replace: true,
+    render({ charts }, container) {
+      if (!charts || !charts.length) return;
+
+      // Same collapsible header as sales_chart
+      const toggle = document.createElement('div');
+      toggle.className = 'chart-section-toggle';
+      toggle.innerHTML = `
+        <div class="chart-section-toggle-label">📊 数据图表 · <span style="font-weight:400;text-transform:none;letter-spacing:0">${charts.length} 张</span></div>
+        <span class="chart-section-arrow">▼</span>`;
+      container.appendChild(toggle);
+
+      const chartBody = document.createElement('div');
+      chartBody.className = 'chart-section-body';
+      chartBody.style.maxHeight = '9999px';
+      toggle.querySelector('.chart-section-arrow').classList.add('open');
+      container.appendChild(chartBody);
+
+      toggle.addEventListener('click', () => {
+        const isOpen = !chartBody.classList.contains('collapsed');
+        if (isOpen) {
+          chartBody.style.maxHeight = chartBody.scrollHeight + 'px';
+          requestAnimationFrame(() => {
+            chartBody.style.maxHeight = '0px';
+            chartBody.classList.add('collapsed');
+            toggle.querySelector('.chart-section-arrow').classList.remove('open');
+          });
+        } else {
+          chartBody.classList.remove('collapsed');
+          chartBody.style.maxHeight = chartBody.scrollHeight + 'px';
+          toggle.querySelector('.chart-section-arrow').classList.add('open');
+          setTimeout(() => { chartBody.style.maxHeight = '9999px'; }, 310);
+          setTimeout(() => _echartsInstances.forEach(c => { try { c.resize(); } catch(_){} }), 320);
+        }
+      });
+
+      // Render each chart into chartBody
+      charts.forEach(chart => {
+        const el = _makeChartEl(220);
+        chartBody.appendChild(_card(chart.title || '', el, chart.id));
+        try {
+          let option;
+          if (chart.type === 'pie') {
+            option = {
+              tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+              legend: { bottom: 0, textStyle: { fontSize: 11, color: '#6b7280' } },
+              series: (chart.series || []).map(s => ({
+                type: 'pie', radius: '60%', center: ['50%', '45%'],
+                name: s.name, data: s.data,
+                label: { fontSize: 11 },
+                itemStyle: { borderRadius: 4 },
+              })),
+            };
+          } else {
+            const xLabels = chart.xAxis || [];
+            const rotate = xLabels.length > 6 ? 30 : 0;
+            option = {
+              tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+              legend: { bottom: 0, textStyle: { fontSize: 11, color: '#6b7280' } },
+              grid: { top: 10, left: 10, right: 10, bottom: rotate ? 56 : 36, containLabel: true },
+              xAxis: { type: 'category', data: xLabels, ..._baseAxis, axisLabel: { ..._baseAxis.axisLabel, rotate } },
+              yAxis: { type: 'value', ..._baseAxis },
+              series: (chart.series || []).map((s, i) => ({
+                name: s.name, data: s.data,
+                type: chart.type === 'line' ? 'line' : 'bar',
+                smooth: true, barMaxWidth: 40,
+                itemStyle: { color: STORE_PALETTE[i % STORE_PALETTE.length] },
+                ...(chart.type === 'line' ? { symbol: 'circle', symbolSize: 5, lineStyle: { width: 2 } } : {}),
+              })),
+            };
+          }
+          _initChart(el, option);
+        } catch(e) {
+          el.style.cssText = 'padding:12px;font-size:12px;color:#999;height:auto;';
+          el.textContent = '图表渲染失败';
+        }
+      });
+    },
+  });
+
+  // ── Canvas collapse ───────────────────────────────
+  function toggleCanvas() {
+    canvasCollapsed = !canvasCollapsed;
+    canvasPane.classList.toggle('collapsed', canvasCollapsed);
+    toggleBtn.textContent = canvasCollapsed ? '‹' : '›';
+  }
+  toggleBtn.addEventListener('click', toggleCanvas);
+
+  // ── Resizable divider ─────────────────────────────
+  let isDragging = false;
+  divider.addEventListener('mousedown', e => {
+    if (e.target === toggleBtn) return;
+    isDragging = true;
+    divider.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const content = document.getElementById('content');
+    const rect = content.getBoundingClientRect();
+    const newCanvasWidth = rect.right - e.clientX;
+    if (newCanvasWidth >= 320 && newCanvasWidth <= 1000) {
+      canvasPane.style.width = newCanvasWidth + 'px';
+    }
+  });
+  window.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    divider.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+
+  // Reset canvas to default width on load
+  canvasPane.style.width = '680px';
+
+  // ── Init new modules ─────────────────────────────
+  _initSidebar();
+  _initUserDropdown();
+  _initNewConvBtn();
+  _initKbUploadTrigger();
+  handleAuthFlow();
+
+  // ── Quick cards ───────────────────────────────────
+  document.querySelectorAll('.quick-card').forEach(card => {
+    card.addEventListener('click', () => {
+      startConversation();
+      sendMessage(card.dataset.prompt);
+    });
+  });
+
+  function startConversation() {
+    if (conversationStarted) return;
+    conversationStarted = true;
+    welcomeEl.classList.add('hidden');
+    messagesEl.classList.remove('hidden');
+  }
+
+  // ── Input auto-resize ─────────────────────────────
+  msgInput.addEventListener('input', () => {
+    msgInput.style.height = 'auto';
+    msgInput.style.height = Math.min(msgInput.scrollHeight, 130) + 'px';
+  });
+  msgInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _onSendClick(); }
+  });
+  sendBtn.addEventListener('click', _onSendClick);
+
+  function _onSendClick() {
+    if (isStreaming) {
+      if (_abortController) _abortController.abort();
+      return;
+    }
+    const text = msgInput.value.trim();
+    if (!text && pendingFiles.length === 0) return;
+    startConversation();
+    sendMessage(text);
+  }
+
+  // ── File chips ────────────────────────────────────
+  uploadBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    Array.from(fileInput.files).forEach(f => {
+      if (!pendingFiles.find(p => p.name === f.name)) pendingFiles.push(f);
+    });
+    fileInput.value = '';
+    renderFileChips();
+  });
+  function renderFileChips() {
+    fileListEl.innerHTML = '';
+    pendingFiles.forEach((f, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'file-chip';
+      chip.innerHTML = `<span class="material-icons" style="font-size:12px">insert_drive_file</span><span>${f.name}</span><span class="remove-file" data-i="${i}">✕</span>`;
+      fileListEl.appendChild(chip);
+    });
+    fileListEl.querySelectorAll('.remove-file').forEach(btn => {
+      btn.addEventListener('click', () => { pendingFiles.splice(+btn.dataset.i, 1); renderFileChips(); });
+    });
+  }
+
+  // ── Upload ────────────────────────────────────────
+  async function uploadPendingFiles(onProgress) {
+    if (pendingFiles.length === 0) return [];
+    const uploaded = [];
+    const total = pendingFiles.length;
+    for (let i = 0; i < total; i++) {
+      const f = pendingFiles[i];
+      if (onProgress) onProgress(`上传 ${f.name} (${i+1}/${total})…`);
+      const fd = new FormData();
+      fd.append('file', f);
+      try {
+        const res = await fetch(`${API}/upload`, {
+          method: 'POST', body: fd,
+          credentials: 'include',
+          signal: _abortController ? _abortController.signal : undefined,
+        });
+        if (res.ok) { uploaded.push((await res.json()).filename); loadMerchantKB(); }
+        else throw new Error(`上传失败: ${res.status}`);
+      } catch(e) {
+        removeThinking();
+        if (e.name === 'AbortError') {
+          // User hit stop — clean up silently
+          pendingFiles = []; renderFileChips();
+          isStreaming = false; _abortController = null; _setStopMode(false);
+          return null;
+        }
+        appendAssistantMsg(`<p style="color:#ef4444">⚠️ ${escapeHtml(e.message)}</p>`);
+        pendingFiles = []; renderFileChips();
+        isStreaming = false; _abortController = null; _setStopMode(false);
+        return null;
+      }
+    }
+    pendingFiles = []; renderFileChips();
+    return uploaded;
+  }
+
+  // ── Message rendering ─────────────────────────────
+  function appendUserMsg(text) {
+    const row = document.createElement('div');
+    row.className = 'msg-row user';
+    row.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`;
+    messagesEl.appendChild(row);
+    scrollBottom();
+  }
+
+  function appendThinking(label) {
+    removeThinking();
+    const row = document.createElement('div');
+    row.className = 'thinking-row'; row.id = 'thinking-row';
+    row.innerHTML = `
+      <div class="msg-avatar"><span class="material-icons" style="font-size:15px">smart_toy</span></div>
+      <div class="thinking-bubble">
+        <span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span>
+        ${label ? `<span class="thinking-label">${escapeHtml(label)}</span>` : ''}
+      </div>`;
+    messagesEl.appendChild(row);
+    scrollBottom();
+  }
+
+  function updateThinkingLabel(label) {
+    const el = document.querySelector('#thinking-row .thinking-label');
+    if (el) el.textContent = label;
+    else {
+      const bubble = document.querySelector('#thinking-row .thinking-bubble');
+      if (bubble) {
+        const span = document.createElement('span');
+        span.className = 'thinking-label';
+        span.textContent = label;
+        bubble.appendChild(span);
+      }
+    }
+  }
+
+  function removeThinking() {
+    const el = document.getElementById('thinking-row');
+    if (el) el.remove();
+  }
+
+  function appendAssistantMsg(html) {
+    const row = document.createElement('div');
+    row.className = 'msg-row assistant';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = html;
+    row.innerHTML = `<div class="msg-avatar"><span class="material-icons" style="font-size:15px">smart_toy</span></div>`;
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    scrollBottom();
+    return bubble;
+  }
+
+  function appendStreamBubble() {
+    const row = document.createElement('div');
+    row.className = 'msg-row assistant'; row.id = 'streaming-row';
+    row.innerHTML = `
+      <div class="msg-avatar"><span class="material-icons" style="font-size:15px">smart_toy</span></div>
+      <div class="bubble" id="streaming-bubble"></div>`;
+    messagesEl.appendChild(row);
+    scrollBottom();
+    return document.getElementById('streaming-bubble');
+  }
+
+  // ── SSE reader ────────────────────────────────────
+  async function readSSEStream(res, onChunk) {
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      // Split on SSE event boundaries (double newline)
+      const events = buf.split('\n\n');
+      buf = events.pop(); // keep incomplete trailing event
+      for (const event of events) {
+        // Each event may have multiple lines; collect all data: lines
+        const dataLines = event.split('\n')
+          .filter(l => l.startsWith('data: '))
+          .map(l => l.slice(6));
+        const data = dataLines.join('').trim();
+        if (!data) continue;
+        if (data === '[DONE]') return;
+        try { onChunk(JSON.parse(data)); } catch(_) {}
+      }
+    }
+  }
+
+  // ── SSE canvas handler ────────────────────────────
+  function handleCanvasUpdate(update) {
+    Canvas.dispatch(update);
+  }
+
+  // ── Send: analyze files ───────────────────────────
+  // ── History summarization ─────────────────────────
+  let isSummarizing = false;
+  async function maybeSummarize() {
+    if (isSummarizing) return;
+    const turns = chatHistory.length / 2;
+    if (turns < SUMMARY_TRIGGER) return;
+    const cutoff = chatHistory.length - KEEP_RECENT * 2;
+    if (cutoff <= 0) return;
+    const toCompress = chatHistory.slice(0, cutoff);
+    isSummarizing = true;
+    try {
+      const res = await fetch(`${API}/summarize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history: toCompress, model_preference: modelPreference }),
+      });
+      if (res.ok) {
+        const { summary } = await res.json();
+        if (summary) {
+          historySummary = historySummary ? historySummary + '\n' + summary : summary;
+          chatHistory = chatHistory.slice(cutoff);
+        }
+      }
+    } catch(e) {
+      console.warn('历史压缩失败，忽略：', e);
+    } finally {
+      isSummarizing = false;
+    }
+  }
+
+  // ── Unified send ──────────────────────────────────
+  // Single path for all messages: text-only or text+files.
+  // Files are parsed server-side as part of the same /chat call.
+  // chatHistory is the single source of truth for every turn.
+  async function sendMessage(text) {
+    if (isStreaming) {
+      // Stop button pressed — abort the current request
+      if (_abortController) _abortController.abort();
+      return;
+    }
+    isStreaming = true;
+    _abortController = new AbortController();
+    _setStopMode(true);
+
+    const inputText = text || msgInput.value.trim();
+    msgInput.value = ''; msgInput.style.height = 'auto';
+
+    const hasFiles = pendingFiles.length > 0;
+    const fileNames = pendingFiles.map(f => f.name);
+
+    // Show the user's message in the UI
+    const displayText = inputText || (hasFiles ? `📎 ${fileNames.join(', ')}` : '');
+    if (displayText) appendUserMsg(displayText);
+
+    // Upload files first (UI feedback), then send everything as one /chat call
+    let uploadedFiles = [];
+    if (hasFiles) {
+      appendThinking(`上传 ${fileNames[0]}…`);
+      const result = await uploadPendingFiles(label => updateThinkingLabel(label));
+      if (result === null) { isStreaming = false; sendBtn.disabled = false; msgInput.focus(); return; }
+      uploadedFiles = result;
+      updateThinkingLabel('解析数据中…');
+    } else {
+      appendThinking();
+    }
+
+    // Record the user turn in history before sending
+    const userContent = inputText || (hasFiles ? `[上传文件：${fileNames.join(', ')}]` : '');
+    chatHistory.push({ role: 'user', content: userContent });
+
+    // Build history to send: summary prefix + recent turns (excluding current user turn)
+    const recentHistory = chatHistory.slice(0, -1);
+    const historyToSend = historySummary
+      ? [{ role: 'assistant', content: `[之前对话摘要] ${historySummary}` }, ...recentHistory]
+      : recentHistory;
+
+    let fullText = '';
+    let streamBubble = null;
+    let chartsReceived = false;
+    let canvasEvents = [];
+
+    try {
+      const shop_config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const res = await fetch(`${API}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        signal: _abortController.signal,
+        body: JSON.stringify({
+          message: inputText,
+          history: historyToSend,
+          shop_config,
+          model_preference: modelPreference,
+          files: uploadedFiles,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      await readSSEStream(res, obj => {
+        if (obj.tool_call) {
+          updateThinkingLabel((obj.reason || '正在查询数据') + '…');
+          return;
+        }
+        if (obj.tool_result) {
+          const bubble = document.querySelector('#thinking-row .thinking-bubble');
+          if (bubble && obj.summary) {
+            const hint = document.createElement('span');
+            hint.style.cssText = 'font-size:11px;color:#999;margin-left:8px;opacity:0.8;display:block;margin-top:2px';
+            hint.textContent = obj.summary.slice(0, 60);
+            bubble.appendChild(hint);
+          }
+          return;
+        }
+        if (obj.canvasUpdate) {
+          console.log('[SSE canvasUpdate]', JSON.stringify(obj.canvasUpdate).slice(0, 200));
+          updateThinkingLabel('正在生成洞察…');
+          canvasEvents.push(obj.canvasUpdate);
+          handleCanvasUpdate(obj.canvasUpdate);
+          if (!chartsReceived && obj.canvasUpdate.type === 'sales_chart') {
+            chartsReceived = true;
+            const salesBubble = appendAssistantMsg(marked.parse(
+              `已解析 **${obj.canvasUpdate.records_count || ''}** 条记录，数据图表已更新。`
+            ));
+            if (salesBubble) {
+              const badge = document.createElement('span');
+              badge.className = 'chart-jump-badge';
+              badge.innerHTML = '📊 查看图表';
+              badge.addEventListener('click', () => {
+                if (canvasCollapsed) toggleCanvas();
+                _scrollCanvasTo(canvasBody.querySelector('[data-module-type="sales_chart"]'));
+              });
+              salesBubble.appendChild(badge);
+            }
+          }
+          if (obj.canvasUpdate.type === 'llm_chart') {
+            const targetBubble = streamBubble || (() => {
+              removeThinking();
+              streamBubble = appendStreamBubble();
+              return streamBubble;
+            })();
+            if (!targetBubble.querySelector('.chart-jump-badge')) {
+              const badge = document.createElement('span');
+              badge.className = 'chart-jump-badge';
+              badge.innerHTML = '📊 查看图表';
+              badge.addEventListener('click', () => {
+                if (canvasCollapsed) toggleCanvas();
+                _scrollCanvasTo(canvasBody.querySelector('[data-module-type="llm_chart"]'));
+              });
+              targetBubble.appendChild(badge);
+            }
+          }
+          return;
+        }
+        if (obj.content) {
+          fullText += obj.content;
+          if (!streamBubble) { removeThinking(); streamBubble = appendStreamBubble(); }
+          streamBubble.innerHTML = _injectChartRefs(marked.parse(fullText));
+          scrollBottom();
+        }
+      });
+
+      if (streamBubble) {
+        streamBubble.innerHTML = _injectChartRefs(marked.parse(fullText));
+        _bindChartRefs(streamBubble);
+        streamBubble.removeAttribute('id');
+        streamBubble.closest('.msg-row').removeAttribute('id');
+        scrollBottom();
+      }
+
+      // Record assistant reply and maybe compress history
+      if (fullText) {
+        chatHistory.push({ role: 'assistant', content: fullText });
+        maybeSummarize();
+        persistTurn(inputText, fullText, canvasEvents);
+      }
+    } catch(err) {
+      if (err.name === 'AbortError') {
+        // User stopped — clean up thinking indicator, keep partial text
+        removeThinking();
+        if (streamBubble) {
+          streamBubble.removeAttribute('id');
+          streamBubble.closest('.msg-row').removeAttribute('id');
+          if (!fullText) streamBubble.closest('.msg-row').remove();
+        }
+        if (fullText) {
+          chatHistory.push({ role: 'assistant', content: fullText });
+        } else {
+          chatHistory.pop();
+          appendAssistantMsg('<p style="color:var(--text-muted);font-size:13px">已停止</p>');
+        }
+      } else {
+        chatHistory.pop();
+        removeThinking();
+        if (streamBubble) streamBubble.closest('.msg-row').remove();
+        appendAssistantMsg(`<p style="color:#ef4444">⚠️ ${escapeHtml(err.message)}</p>`);
+      }
+    } finally {
+      isStreaming = false;
+      _abortController = null;
+      _setStopMode(false);
+      msgInput.focus();
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────
+  function scrollBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+  // Replace [[chart_id]] tokens in rendered HTML with clickable jump badges
+  function _scrollCanvasTo(el) {
+    if (!el) return;
+    canvasBody.scrollTo({ top: el.offsetTop - canvasBody.offsetTop, behavior: 'smooth' });
+  }
+
+  function _bindChartRefs(bubble) {
+    bubble.querySelectorAll('a[data-chart-ref]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const id = a.dataset.chartRef;
+        if (canvasCollapsed) toggleCanvas();
+        _scrollCanvasTo(canvasBody.querySelector(`[data-chart-id="${id}"]`));
+      });
+    });
+  }
+
+  function _injectChartRefs(html) {
+    return html.replace(/\[\[([a-zA-Z0-9_-]+)\]\]/g, (_, id) =>
+      `<a href="#" data-chart-ref="${id}" class="chart-jump-badge" style="text-decoration:none">📊 查看图表</a>`
+    );
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

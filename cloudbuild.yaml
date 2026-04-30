@@ -1,0 +1,41 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - -t
+      - asia-southeast2-docker.pkg.dev/$PROJECT_ID/usb-assistant/app:$COMMIT_SHA
+      - -t
+      - asia-southeast2-docker.pkg.dev/$PROJECT_ID/usb-assistant/app:latest
+      - .
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - --all-tags
+      - asia-southeast2-docker.pkg.dev/$PROJECT_ID/usb-assistant/app
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - usb-assistant
+      - --image=asia-southeast2-docker.pkg.dev/$PROJECT_ID/usb-assistant/app:$COMMIT_SHA
+      - --region=asia-southeast2
+      - --platform=managed
+      - --allow-unauthenticated
+      - --memory=2Gi
+      - --cpu=2
+      - --min-instances=0
+      - --max-instances=10
+      - --concurrency=80
+      - --add-cloudsql-instances=usb-assistant-prod:asia-southeast2:usb-assistant-db
+      - --set-secrets=DATABASE_URL=usb-assistant-db-url:latest,GEMINI_API_KEY=usb-assistant-gemini-key:latest,GOOGLE_MAPS_KEY=usb-assistant-maps-key:latest,JWT_SECRET=usb-assistant-jwt-secret:latest,ANTHROPIC_API_KEY=usb-assistant-anthropic-key:latest,OPENAI_API_KEY=usb-assistant-openai-key:latest
+      - --set-env-vars=USE_PGVECTOR=true
+
+images:
+  - asia-southeast2-docker.pkg.dev/$PROJECT_ID/usb-assistant/app:$COMMIT_SHA
+  - asia-southeast2-docker.pkg.dev/$PROJECT_ID/usb-assistant/app:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
