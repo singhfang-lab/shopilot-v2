@@ -492,6 +492,129 @@
 
     .skip-link a:hover { color: var(--accent); }
   </style>
+
+  <!-- Brand canvas styles (injected into full-screen overlay) -->
+  <style id="canvas-css">
+  #brand-canvas { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; }
+  #brand-canvas * { box-sizing: border-box; }
+  .bc-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 10px; overflow: hidden; }
+  .bc-card-dark { background: #111827; border-radius: 14px; padding: 16px; margin-bottom: 10px; overflow: hidden; overflow-wrap: break-word; word-break: break-word; }
+  .bc-sec-label { font-size: 9px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 12px; }
+  .bc-sec-label-light { font-size: 9px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #C0C4CC; margin-bottom: 12px; }
+  .bc-brand-head { display: flex; gap: 12px; align-items: flex-start; }
+  .bc-brand-ico { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .bc-brand-name { font-size: 18px; font-weight: 700; color: #111827; line-height: 1.2; }
+  .bc-brand-sub { font-size: 11px; color: #999; margin-top: 3px; }
+  .bc-badges { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+  .bc-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .bc-b-local { background:#EEF2FF;color:#4338CA; } .bc-b-cn { background:#FEF2F2;color:#DC2626; }
+  .bc-b-cat { background:#F0FDF4;color:#15803D; } .bc-b-size { background:#FFF7ED;color:#C2410C; }
+  .bc-b-warn { background:#FFFBEB;color:#B45309; } .bc-b-new { background:#FFF1F2;color:#E11D48; }
+  .bc-src { display:inline-block;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;vertical-align:middle;margin-left:3px;opacity:0.7; }
+  .bc-sp { background:#EEF2FF;color:#4338CA; } .bc-sc { background:#F0FDF4;color:#15803D; }
+  .bc-sk { background:#FFF7ED;color:#C2410C; } .bc-sl { background:#F3F4F6;color:#6B7280; }
+  .bc-kpi-grid { display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;margin-top:14px; }
+  .bc-kpi-cell { background:rgba(255,255,255,0.05);padding:12px 14px; }
+  .bc-kpi-v { font-size:20px;font-weight:700;color:white; }
+  .bc-kpi-l { font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;line-height:1.3; }
+  .bc-kpi-s { font-size:8px;color:rgba(255,255,255,0.2);margin-top:3px; }
+  .bc-kpi-d { font-size:10px;font-weight:600;margin-top:3px; }
+  .bc-d-up { color:#4ADE80; } .bc-d-dn { color:#F87171; } .bc-d-mid { color:#FCD34D; }
+  .bc-summary { font-size:13px;line-height:1.75;color:rgba(255,255,255,0.82);word-break:break-all;overflow-wrap:break-word; }
+  .bc-summary strong { color:white; }
+  .bc-bullets { margin-top:12px;display:flex;flex-direction:column;gap:8px; }
+  .bc-bullet { display:flex;gap:8px;font-size:12px;color:rgba(255,255,255,0.72);line-height:1.6; }
+  .bc-bullet span:last-child { min-width:0;overflow-wrap:break-word;word-break:break-all;flex:1; }
+  .bc-bullet strong { color:white; }
+  .bc-bullet-num { background:rgba(255,255,255,0.1);color:white;font-weight:700;font-size:10px;min-width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px; }
+  .bc-section-title { font-size:13px;font-weight:700;color:#111827;margin-bottom:12px;display:flex;align-items:center;gap:6px; }
+  .bc-mkt-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+  .bc-mkt-cell { background:#F8FAFC;border-radius:10px;padding:12px; }
+  .bc-mkt-l { font-size:10px;color:#999;margin-bottom:4px;line-height:1.3; }
+  .bc-mkt-v { font-size:15px;font-weight:700;color:#111827;line-height:1.2; }
+  .bc-mkt-n { font-size:10px;color:#aaa;margin-top:3px;line-height:1.4; }
+  .bc-bar-row { display:flex;align-items:center;gap:8px;margin-bottom:6px; }
+  .bc-bar-name { font-size:11px;color:#555;width:96px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .bc-bar-name.self { color:#111827;font-weight:700; }
+  .bc-bar-track { flex:1;min-width:0;height:7px;background:#F0F0F0;border-radius:4px;overflow:hidden; }
+  .bc-bar-fill { height:100%;border-radius:4px; }
+  .bc-bar-pct { font-size:10px;color:#aaa;width:40px;text-align:right;flex-shrink:0; }
+  .bc-bar-pct.self { color:#111827;font-weight:700; }
+  .bc-pos-scroll-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -16px;padding:0 16px; }
+  .bc-pos-scroll-wrap::-webkit-scrollbar { display:none; }
+  .bc-pos-axis { display:flex;align-items:center;gap:0;min-width:600px;height:52px;border-radius:26px;position:relative;padding:0 12px; }
+  .bc-pos-warm { background:linear-gradient(to right,#EFF6FF,#FEF9C3,#FEF2F2); }
+  .bc-pos-cool { background:linear-gradient(to right,#F0FDF4,#FEF9C3,#FEF3C7); }
+  .bc-pos-end { font-size:9px;color:#aaa;flex-shrink:0;white-space:nowrap;padding:0 8px; }
+  .bc-pos-inner { flex:1;position:relative;height:100%; }
+  .bc-pos-bub { position:absolute;top:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:700;padding:4px 8px;border-radius:20px;white-space:nowrap; }
+  .bc-pb-self { background:#111827;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.25);z-index:2; }
+  .bc-pb-other { background:white;color:#888;border:1px solid #E5E7EB;box-shadow:0 1px 3px rgba(0,0,0,0.08);font-weight:500;z-index:1; }
+  .bc-pos-hint { font-size:10px;color:#aaa;margin-top:6px; }
+  .bc-social-scroll { display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -16px;padding:0 16px 4px; }
+  .bc-social-scroll::-webkit-scrollbar { display:none; }
+  .bc-social-card { background:#F8FAFC;border-radius:10px;padding:12px 14px;flex-shrink:0;width:150px; }
+  .bc-soc-plat { font-size:9px;font-weight:700;color:#aaa;letter-spacing:0.5px;margin-bottom:5px; }
+  .bc-soc-handle { font-size:11px;color:#4338CA;font-weight:600; }
+  .bc-soc-val { font-size:15px;font-weight:700;color:#111827;margin-top:4px; }
+  .bc-soc-note { font-size:10px;color:#aaa;margin-top:2px;line-height:1.4; }
+  .bc-tier-label { font-size:10px;font-weight:700;color:#aaa;letter-spacing:0.8px;margin:16px 0 10px;display:flex;align-items:center;gap:6px; }
+  .bc-tier-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+  .bc-td-head { background:#6366F1; } .bc-td-direct { background:#F59E0B; } .bc-td-growth { background:#10B981; }
+  .bc-comp-card { background:#F8FAFC;border-radius:12px;padding:14px;margin-bottom:8px;width:100%;max-width:100%;overflow:hidden;box-sizing:border-box; }
+  .bc-comp-card.self-card { background:#F0F4FF;border:1.5px solid #C7D2FE; }
+  .bc-comp-card.warn-card { background:#FFF8F0;border:1.5px solid #FDE68A; }
+  .bc-comp-top { display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px; }
+  .bc-comp-name { font-size:13px;font-weight:700;color:#111827; }
+  .bc-comp-name.other { color:#555; }
+  .bc-comp-sub { font-size:10px;color:#aaa;margin-top:1px; }
+  .bc-rating-badge { font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px; }
+  .bc-r-hi { background:#F0FDF4;color:#15803D; } .bc-r-md { background:#FFFBEB;color:#B45309; } .bc-r-lo { background:#FEF2F2;color:#DC2626; }
+  .bc-comp-stats { display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px; }
+  .bc-comp-stat { background:white;border-radius:8px;padding:8px 10px; }
+  .bc-cs-l { font-size:9px;color:#aaa;margin-bottom:2px; }
+  .bc-cs-v { font-size:13px;font-weight:700;color:#111827; }
+  .bc-cs-src { font-size:8px;color:#ccc;margin-top:1px; }
+  .bc-rc { margin-top:10px; }
+  .bc-rc-label { font-size:10px;color:#888;margin-bottom:5px; }
+  .bc-rc-row { display:flex;align-items:center;gap:8px;margin-bottom:4px; }
+  .bc-rc-name { font-size:10px;color:#666;width:80px;flex-shrink:0; }
+  .bc-rc-name.self { color:#111827;font-weight:700; }
+  .bc-rc-track { flex:1;min-width:0;height:6px;background:#F0F0F0;border-radius:3px;overflow:hidden; }
+  .bc-rc-fill { height:100%;border-radius:3px; }
+  .bc-rf-self { background:#111827; } .bc-rf-other { background:#D1D5DB; }
+  .bc-rf-top { background:#6366F1; } .bc-rf-warn { background:#EF4444; }
+  .bc-rc-num { font-size:10px;font-weight:600;width:44px;text-align:right;flex-shrink:0; }
+  .bc-comp-insight { background:white;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:11px;color:#555;line-height:1.6;border-left:3px solid #E5E7EB;overflow-wrap:break-word;word-break:break-all; }
+  .bc-comp-insight strong { color:#111827; }
+  .bc-ci-self { border-left-color:#6366F1;background:#F5F3FF; }
+  .bc-mtabs { display:flex;gap:6px;margin-bottom:12px; }
+  .bc-mtab { flex:1;text-align:center;font-size:11px;font-weight:600;padding:7px 4px;border-radius:8px;cursor:pointer;background:#F3F4F6;color:#888;transition:all 0.15s;border:none;font-family:inherit; }
+  .bc-mtab.active { background:#111827;color:white; }
+  .bc-mpanel { display:none; }
+  .bc-mpanel.active { display:block; }
+  .bc-ability-row { display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6; }
+  .bc-ability-row:last-child { border-bottom:none; }
+  .bc-ability-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px; }
+  .bc-ad-strong { background:#22C55E; } .bc-ad-mid { background:#F59E0B; } .bc-ad-weak { background:#EF4444; }
+  .bc-ability-text { font-size:12px;color:#444;line-height:1.5;flex:1; }
+  .bc-ability-module { font-size:10px;color:#aaa;margin-top:2px; }
+  .bc-divider { height:1px;background:#F0F0F0;margin:4px 0 14px; }
+  .bc-diag { display:flex;flex-direction:column;gap:0; }
+  .bc-diag-step { display:flex;gap:12px;position:relative; }
+  .bc-diag-step:not(:last-child)::after { content:'';position:absolute;left:13px;top:30px;width:2px;height:calc(100% - 8px);background:#F0F0F0; }
+  .bc-diag-ico { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;position:relative;z-index:1;margin-top:1px; }
+  .bc-di-b { background:#FEF9C3; } .bc-di-t { background:#DBEAFE; } .bc-di-a { background:#111827;color:white; }
+  .bc-diag-body { padding-bottom:16px;flex:1; }
+  .bc-diag-lbl { font-size:9px;font-weight:700;letter-spacing:1px;color:#ccc;text-transform:uppercase;margin-bottom:3px; }
+  .bc-diag-txt { font-size:12px;color:#444;line-height:1.7; }
+  .bc-diag-txt strong { color:#111827; }
+  .bc-cta-btn { display:inline-flex;align-items:center;justify-content:center;gap:6px;color:white;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;margin-top:8px;text-decoration:none;width:100%;cursor:pointer;border:none;font-family:inherit;background:#4338CA; }
+  .bc-legend { background:#F9FAFB;border:1px solid #F0F0F0;border-radius:10px;padding:12px 14px;margin-top:10px;display:flex;flex-direction:column;gap:6px; }
+  .bc-legend-row { display:flex;align-items:center;gap:6px;font-size:10px;color:#aaa; }
+  .bc-ldot { width:8px;height:8px;border-radius:2px;flex-shrink:0; }
+  .bc-lp { background:#4338CA; } .bc-lc { background:#15803D; } .bc-lk { background:#C2410C; } .bc-ll { background:#9CA3AF; }
+  </style>
 </head>
 <body>
 
@@ -579,7 +702,7 @@
     <!-- Step 4: Generating KB -->
     <div class="step" id="step-generating">
       <div id="gen-loading">
-        <div class="card-title">正在生成知识库</div>
+        <div class="card-title">正在生成品牌画像</div>
         <div class="card-sub">AI 正在分析品牌信息，请稍候（约 30 秒）</div>
         <div class="gen-status">
           <div class="spinner"></div>
@@ -587,12 +710,6 @@
         </div>
         <div class="gen-text-preview" id="gen-preview"></div>
         <button class="btn-secondary" style="margin-top:16px" onclick="skipToMain()">跳过，直接进入</button>
-      </div>
-      <div id="gen-done" style="display:none">
-        <div class="gen-done-icon">🎉</div>
-        <div class="gen-done-title">知识库已就绪！</div>
-        <div class="gen-done-sub">已为你的品牌建立基础知识库，现在可以开始分析了</div>
-        <button class="btn-primary" onclick="goToMain()">进入主界面 →</button>
       </div>
     </div>
 
@@ -605,37 +722,45 @@
 
 </div>
 
+<!-- ══ 品牌画像全屏展示（生成完成后替换页面） ══ -->
+<div id="brand-canvas" style="display:none; position:fixed; inset:0; z-index:9999; background:#F2F3F7; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+  <!-- topbar -->
+  <div style="background:#111827; padding:14px 16px 12px; position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:10px;">
+    <span style="font-size:15px;font-weight:700;color:white;">商户助手</span>
+    <span style="margin-left:auto;font-size:10px;color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.08);padding:3px 10px;border-radius:20px;">⚡ 首次自动扫描</span>
+  </div>
+  <!-- content injected by renderBrandCanvas() -->
+  <div id="canvas-body" style="padding:12px 12px 80px;"></div>
+  <!-- CTA fixed bottom -->
+  <div style="position:fixed;bottom:0;left:0;right:0;padding:12px 16px 20px;background:linear-gradient(to top,#F2F3F7 70%,transparent);z-index:10;">
+    <button onclick="goToMain()" style="width:100%;background:#111827;color:white;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">
+      开始分析单店数据 →
+    </button>
+  </div>
+</div>
+
 <script>
   const API = window.location.hostname === 'localhost' ? 'http://localhost:8081' : '';
 
-  let currentType = ''; // 'existing' | 'new'
+  let currentType = '';
   let selectedCandidate = null;
   let boundMerchantId = null;
 
-  // Check auth
   fetch(`${API}/auth/me`, { credentials: 'include' })
-    .then(r => {
-      if (!r.ok) { window.location.replace('/login.html'); return; }
-      return r.json();
-    })
+    .then(r => { if (!r.ok) { window.location.replace('/login.html'); return; } return r.json(); })
     .then(data => {
       if (!data) return;
-      // If already has merchant, skip to main (unless explicitly rebinding)
       const isRebind = new URLSearchParams(location.search).get('rebind');
-      if (data.merchant && !isRebind) {
-        window.location.replace('/index.html');
-      }
+      if (data.merchant && !isRebind) window.location.replace('/index.html');
     })
     .catch(() => window.location.replace('/login.html'));
 
-  // ── Navigation ────────────────────────────────────────────────────────────
-
+  // ── Navigation ──────────────────────────────────────────────────────────
   function goTo(step) {
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     document.getElementById('step-' + step).classList.add('active');
     updateProgress(step);
-    const skipLink = document.getElementById('skip-link');
-    skipLink.style.display = (step === 'generating') ? 'none' : '';
+    document.getElementById('skip-link').style.display = (step === 'generating') ? 'none' : '';
   }
 
   function updateProgress(step) {
@@ -649,85 +774,60 @@
 
   function selectType(type) {
     currentType = type;
-    if (type === 'existing') {
-      goTo('search');
-      setTimeout(() => document.getElementById('search-input').focus(), 50);
-    } else {
-      goTo('new');
-      setTimeout(() => document.getElementById('new-brand-input').focus(), 50);
-    }
+    if (type === 'existing') { goTo('search'); setTimeout(() => document.getElementById('search-input').focus(), 50); }
+    else { goTo('new'); setTimeout(() => document.getElementById('new-brand-input').focus(), 50); }
   }
 
   function goBackFromConfirm() {
-    if (currentType === 'existing') goTo('search');
-    else goTo('new');
+    if (currentType === 'existing') goTo('search'); else goTo('new');
   }
 
-  // ── Search ────────────────────────────────────────────────────────────────
-
+  // ── Search ──────────────────────────────────────────────────────────────
   let searchTimer = null;
   document.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('search-input');
-    if (inp) {
-      inp.addEventListener('input', () => {
-        clearTimeout(searchTimer);
-        const q = inp.value.trim();
-        if (q.length < 1) {
-          document.getElementById('search-results').innerHTML = '';
-          document.getElementById('search-status').innerHTML = '';
-          return;
-        }
-        searchTimer = setTimeout(() => doSearch(q), 400);
-      });
-    }
+    if (inp) inp.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const q = inp.value.trim();
+      if (q.length < 1) { document.getElementById('search-results').innerHTML = ''; document.getElementById('search-status').innerHTML = ''; return; }
+      searchTimer = setTimeout(() => doSearch(q), 400);
+    });
+    const inp2 = document.getElementById('new-brand-input');
+    if (inp2) inp2.addEventListener('keydown', e => { if (e.key === 'Enter') confirmNewBrand(); });
   });
 
   async function doSearch(q) {
     document.getElementById('search-status').innerHTML = '<div class="search-loading">搜索中...</div>';
     document.getElementById('search-results').innerHTML = '';
     try {
-      const res = await fetch(`${API}/onboarding/search?q=${encodeURIComponent(q)}`, {
-        credentials: 'include',
-      });
-      const data = await res.json();
-      renderResults(data.candidates || [], q);
-    } catch {
-      document.getElementById('search-status').innerHTML = '<div class="search-loading">搜索失败，请重试</div>';
-    }
+      const res = await fetch(`${API}/onboarding/search?q=${encodeURIComponent(q)}`, { credentials: 'include' });
+      renderResults((await res.json()).candidates || [], q);
+    } catch { document.getElementById('search-status').innerHTML = '<div class="search-loading">搜索失败，请重试</div>'; }
   }
 
   function renderResults(candidates, q) {
     document.getElementById('search-status').innerHTML = '';
     const container = document.getElementById('search-results');
     if (!candidates.length) {
-      container.innerHTML = `
-        <div class="no-result">
-          <div class="no-result-text">没有找到「${q}」相关品牌</div>
-          <button class="link-btn" onclick="useAsNewBrand('${q.replace(/'/g, "\\'")}')">以新品牌继续 →</button>
-        </div>`;
+      container.innerHTML = `<div class="no-result"><div class="no-result-text">没有找到「${q}」相关品牌</div><button class="link-btn" onclick="useAsNewBrand('${q.replace(/'/g,"\\'")}')">以新品牌继续 →</button></div>`;
       return;
     }
     container.innerHTML = candidates.map((c, i) => `
       <div class="result-item" onclick="selectCandidate(${i})">
-        ${c.photo_url
-          ? `<img class="result-photo" src="${c.photo_url}" alt="${c.name}" onerror="this.style.display='none'" />`
-          : `<div class="result-photo-placeholder">🏪</div>`}
+        ${c.photo_url ? `<img class="result-photo" src="${c.photo_url}" alt="${c.name}" onerror="this.style.display='none'" />` : `<div class="result-photo-placeholder">🏪</div>`}
         <div class="result-info">
-          <div class="result-name">${c.name}${c.store_count > 1 ? ` <span style="font-weight:400;color:var(--text-muted);font-size:12px">(连锁)</span>` : ''}</div>
+          <div class="result-name">${c.name}${c.store_count > 1 ? ' <span style="font-weight:400;color:var(--text-muted);font-size:12px">(连锁)</span>' : ''}</div>
           <div class="result-meta">${c.rating > 0 ? `⭐ ${c.rating.toFixed(1)}` : ''}${c.review_count > 0 ? ` · ${c.review_count.toLocaleString()} 评价` : ''}${c.store_count > 1 ? ` · ${c.store_count} 家门店` : ''}</div>
           ${c.addresses && c.addresses[0] ? `<div class="result-addr">📍 ${c.addresses[0]}</div>` : ''}
         </div>
         <div class="result-arrow">›</div>
-      </div>
-    `).join('');
-    // Store candidates globally for selection
+      </div>`).join('');
     window._searchCandidates = candidates;
   }
 
   function selectCandidate(idx) {
     selectedCandidate = (window._searchCandidates || [])[idx];
-    if (!selectedCandidate) return;
-    showConfirm(selectedCandidate);
+    if (selectedCandidate) showConfirm(selectedCandidate);
   }
 
   function useAsNewBrand(name) {
@@ -736,13 +836,6 @@
     goTo('new');
   }
 
-  // ── New brand ─────────────────────────────────────────────────────────────
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const inp = document.getElementById('new-brand-input');
-    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') confirmNewBrand(); });
-  });
-
   function confirmNewBrand() {
     const name = document.getElementById('new-brand-input').value.trim();
     if (!name) { document.getElementById('new-brand-error').textContent = '请输入品牌名称'; return; }
@@ -750,95 +843,55 @@
     showConfirm(selectedCandidate);
   }
 
-  // ── Confirm ───────────────────────────────────────────────────────────────
-
+  // ── Confirm ─────────────────────────────────────────────────────────────
   function showConfirm(c) {
     const el = document.getElementById('confirm-card-content');
     const isNew = currentType === 'new' || c.merchant_type === 'new';
     let html = '';
     if (c.photo_url) html += `<img class="confirm-photo" src="${c.photo_url}" alt="${c.name}" onerror="this.remove()" />`;
-    html += `<div class="confirm-name">${c.name}</div>`;
-    html += `<div class="confirm-meta">`;
+    html += `<div class="confirm-name">${c.name}</div><div class="confirm-meta">`;
     if (c.rating > 0) html += `<span class="confirm-badge">⭐ ${c.rating.toFixed(1)}</span>`;
     if (c.review_count > 0) html += `<span class="confirm-badge">${c.review_count.toLocaleString()} 评价</span>`;
     if (c.store_count > 1) html += `<span class="confirm-badge">🏪 ${c.store_count} 家门店</span>`;
     if (c.chain_kb && c.chain_kb.category) html += `<span class="confirm-badge">${c.chain_kb.category}</span>`;
-    if (c.chain_kb && c.chain_kb.priceBand) html += `<span class="confirm-badge">${c.chain_kb.priceBand}</span>`;
     if (isNew) html += `<span class="confirm-badge">新品牌</span>`;
     html += `</div>`;
-    if (c.addresses && c.addresses.length > 0) {
-      html += `<div class="confirm-addrs">` + c.addresses.slice(0, 2).map(a => `📍 ${a}`).join('<br>') + `</div>`;
-    }
+    if (c.addresses && c.addresses.length) html += `<div class="confirm-addrs">` + c.addresses.slice(0,2).map(a=>`📍 ${a}`).join('<br>') + `</div>`;
     el.innerHTML = html;
     goTo('confirm');
   }
 
   async function confirmBrand() {
     const btn = document.getElementById('confirm-btn');
-    btn.disabled = true;
-    btn.textContent = '保存中...';
+    btn.disabled = true; btn.textContent = '保存中...';
     try {
       const c = selectedCandidate;
       const res = await fetch(`${API}/onboarding/bind`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: c.name,
-          place_ids: c.place_ids || [],
-          store_count: c.store_count || 1,
-          rating: c.rating || 0,
-          review_count: c.review_count || 0,
-          addresses: c.addresses || [],
-          chain_kb: c.chain_kb || null,
-          merchant_type: currentType,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ name: c.name, place_ids: c.place_ids||[], store_count: c.store_count||1, rating: c.rating||0, review_count: c.review_count||0, addresses: c.addresses||[], chain_kb: c.chain_kb||null, merchant_type: currentType }),
       });
-      if (!res.ok) {
-        alert('绑定失败，请重试');
-        btn.disabled = false;
-        btn.textContent = '✓ 确认，这是我的品牌';
-        return;
-      }
-      const data = await res.json();
-      boundMerchantId = data.merchant_id;
-    } catch {
-      alert('网络错误，请重试');
-      btn.disabled = false;
-      btn.textContent = '✓ 确认，这是我的品牌';
-      return;
-    }
-
+      if (!res.ok) { alert('绑定失败，请重试'); btn.disabled = false; btn.textContent = '✓ 确认，这是我的品牌'; return; }
+      boundMerchantId = (await res.json()).merchant_id;
+    } catch { alert('网络错误，请重试'); btn.disabled = false; btn.textContent = '✓ 确认，这是我的品牌'; return; }
     goTo('generating');
     startGenerateKB();
   }
 
-  // ── Generate KB ──────────────────────────────────────────────────────────
-
+  // ── Generate KB & render canvas ──────────────────────────────────────────
   async function startGenerateKB() {
     if (!boundMerchantId || !selectedCandidate) { goToMain(); return; }
-
     const previewEl = document.getElementById('gen-preview');
     const statusEl = document.getElementById('gen-status-text');
-
     try {
       const res = await fetch(`${API}/onboarding/generate-kb`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          merchant_id: boundMerchantId,
-          brand_name: selectedCandidate.name,
-          merchant_type: currentType,
-          chain_kb: selectedCandidate.chain_kb || null,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ merchant_id: boundMerchantId, brand_name: selectedCandidate.name, merchant_type: currentType, chain_kb: selectedCandidate.chain_kb||null }),
       });
-
       if (!res.ok || !res.body) { goToMain(); return; }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let buf = '', eventName = '';
+      let buf = '', eventName = '', hasProfile = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -851,37 +904,326 @@
           if (line.startsWith('data: ')) {
             try {
               const payload = JSON.parse(line.slice(6));
-              if (eventName === 'status') {
-                statusEl.textContent = payload.msg;
-              } else if (eventName === 'chunk') {
-                previewEl.textContent += payload.text;
-                previewEl.scrollTop = previewEl.scrollHeight;
-              } else if (eventName === 'done') {
-                showGenDone();
-              } else if (eventName === 'error') {
-                statusEl.textContent = payload.msg;
-                setTimeout(goToMain, 2000);
-              }
+              if (eventName === 'status') { statusEl.textContent = payload.msg; }
+              else if (eventName === 'chunk') { previewEl.textContent += payload.text; previewEl.scrollTop = previewEl.scrollHeight; }
+              else if (eventName === 'done') { hasProfile = !!payload.has_profile; showCanvas(hasProfile); }
+              else if (eventName === 'error') { statusEl.textContent = payload.msg; setTimeout(goToMain, 2500); }
             } catch {}
           }
         }
       }
-    } catch {
-      goToMain();
+    } catch { goToMain(); }
+  }
+
+  async function showCanvas(hasProfile) {
+    if (!hasProfile) { goToMain(); return; }
+    try {
+      const res = await fetch(`${API}/onboarding/profile`, { credentials: 'include' });
+      if (!res.ok) { goToMain(); return; }
+      const profile = await res.json();
+      if (!profile.profile_json) { goToMain(); return; }
+      renderBrandCanvas(profile);
+      document.getElementById('brand-canvas').style.display = 'block';
+      document.getElementById('brand-canvas').scrollTop = 0;
+    } catch { goToMain(); }
+  }
+
+  function goToMain() { window.location.replace('/index.html'); }
+  function skipToMain() { window.location.replace('/index.html?skip_onboarding=1'); }
+
+  // ── Brand Canvas Renderer ────────────────────────────────────────────────
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function safeHtml(s) { return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/&lt;strong&gt;(.+?)&lt;\/strong&gt;/g,'<strong>$1</strong>'); }
+  function src(type) {
+    const map = { places:'<span class="bc-src bc-sp">Places</span>', chains:'<span class="bc-src bc-sc">chains</span>', calc:'<span class="bc-src bc-sk">计算值</span>', ai:'<span class="bc-src bc-sl">AI推断</span>' };
+    return map[type] || '';
+  }
+  function ratingClass(r) { return r >= 4.5 ? 'bc-r-hi' : r >= 4.0 ? 'bc-r-md' : 'bc-r-lo'; }
+
+  function renderBrandCanvas(profile) {
+    const container = document.getElementById('canvas-body');
+    _renderCanvasHTML(profile, container, 'bc-ability', 'bcTab');
+  }
+
+  function _renderCanvasHTML(profile, container, tabPrefix, tabFnName) {
+    const p = profile.profile_json;
+    const m = profile.meta || {};
+    const ckb = profile.chain_kb || {};
+    const brandName = profile.brand_name;
+    const ss = p.scan_summary || {};
+    const mkt = p.market || {};
+    const pos = p.positioning || {};
+    const social = p.social || [];
+    const comps = p.competitors || {};
+    const ability = p.ability || {};
+    const diag = p.diagnosis || {};
+
+    const sampleSize = m.sample_size || 1;
+    const avgReview = m.avg_review_per_store || 0;
+    const industryAvg = 4.4;
+    const ratingDelta = m.rating ? (m.rating - industryAvg).toFixed(1) : null;
+
+    // Determine brand-ico color by category
+    const catIcoMap = {'咖啡':'#FFF7ED','茶':'#FEF2F2','奶茶':'#FEF2F2','tea':'#FEF2F2','coffee':'#FFF7ED','鸡':'#F0FDF4','炸鸡':'#F0FDF4','快餐':'#FEF9C3'};
+    const catLower = (ckb.category||'').toLowerCase();
+    let icoColor = '#F3F4F6';
+    for (const [k,v] of Object.entries(catIcoMap)) { if (catLower.includes(k)) { icoColor = v; break; } }
+    const icoEmoji = catLower.includes('咖啡')||catLower.includes('coffee') ? '☕' : catLower.includes('茶')||catLower.includes('tea') ? '🍵' : catLower.includes('鸡')||catLower.includes('chicken') ? '🍗' : '🏪';
+    const isCn = ckb.origin === 'CN';
+
+    // price axis gradient: cool for tea/drinks, warm for coffee/food
+    const axisGrad = (catLower.includes('茶')||catLower.includes('tea')) ? 'bc-pos-cool' : 'bc-pos-warm';
+
+    let html = '';
+
+    // ── 品牌头 ──
+    html += `<div class="bc-card" style="margin-top:10px;">
+      <div class="bc-brand-head">
+        <div class="bc-brand-ico" style="background:${icoColor}">${icoEmoji}</div>
+        <div>
+          <div class="bc-brand-name">${esc(brandName)}</div>
+          <div class="bc-brand-sub">${esc(ckb.category||'')}${ckb.founded ? ' · ' + ckb.founded + '年创立' : ''}</div>
+          <div class="bc-badges">
+            ${isCn ? '<span class="bc-badge bc-b-cn">🇨🇳 中国品牌</span>' : '<span class="bc-badge bc-b-local">🇮🇩 印尼本土</span>'}
+            ${ckb.category ? `<span class="bc-badge bc-b-cat">${esc(ckb.category)}</span>` : ''}
+            ${ckb.storeCount ? `<span class="bc-badge bc-b-size">${ckb.storeCount}家门店</span>` : ''}
+            ${ckb.expansion && ckb.expansion.includes('停滞') ? `<span class="bc-badge bc-b-warn">⚠️ 扩张停滞</span>` : ''}
+            ${ckb.founded && parseInt(ckb.founded) >= 2022 ? `<span class="bc-badge bc-b-new">🆕 新品牌</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    // ── 一、品牌分析（镜/窗/门 + KPI）──
+    html += `<div class="bc-card-dark">
+      <div class="bc-sec-label">一、品牌分析</div>
+      <div class="bc-summary">${safeHtml(ss.mirror||'')}</div>
+      <div class="bc-bullets">
+        <div class="bc-bullet"><span class="bc-bullet-num">1</span><span>${safeHtml(ss.window||'')}</span></div>
+        <div class="bc-bullet"><span class="bc-bullet-num">2</span><span>${safeHtml(ss.door||'')}</span></div>
+        ${ss.action ? `<div class="bc-bullet"><span class="bc-bullet-num">3</span><span>${safeHtml(ss.action)}</span></div>` : ''}
+      </div>
+      <div class="bc-kpi-grid">
+        <div class="bc-kpi-cell">
+          <div class="bc-kpi-v">${m.rating ? m.rating.toFixed(1) : '—'}</div>
+          <div class="bc-kpi-l">Google评分</div>
+          <div class="bc-kpi-s">Places · ${sampleSize}家样本</div>
+          ${ratingDelta !== null ? `<div class="bc-kpi-d ${parseFloat(ratingDelta)>=0?'bc-d-up':'bc-d-dn'}">${parseFloat(ratingDelta)>=0?'↑':'↓'} ${parseFloat(ratingDelta)>=0?'高于':'低于'}均值 ${industryAvg}</div>` : ''}
+        </div>
+        <div class="bc-kpi-cell">
+          <div class="bc-kpi-v">${avgReview ? avgReview.toLocaleString() : '—'}</div>
+          <div class="bc-kpi-l">单店均评论数</div>
+          <div class="bc-kpi-s">计算值 ÷ ${sampleSize}</div>
+          <div class="bc-kpi-d bc-d-up">↑ 赛道参照</div>
+        </div>
+        <div class="bc-kpi-cell">
+          <div class="bc-kpi-v">${m.review_count ? m.review_count.toLocaleString() : '—'}</div>
+          <div class="bc-kpi-l">总评论（样本）</div>
+          <div class="bc-kpi-s">Places · ${sampleSize}家</div>
+          <div class="bc-kpi-d bc-d-up">↑ 样本合计</div>
+        </div>
+        <div class="bc-kpi-cell">
+          <div class="bc-kpi-v">${ckb.priceBand ? ckb.priceBand.replace('Rp ','').replace('Rp','') : '—'}</div>
+          <div class="bc-kpi-l">价格带</div>
+          <div class="bc-kpi-s">chains.json</div>
+          <div class="bc-kpi-d bc-d-mid">→ ${ckb.priceBand && parseInt(ckb.priceBand.replace(/\D/g,'').slice(0,3)) >= 40 ? '高端区间' : '大众区间'}</div>
+        </div>
+      </div>
+    </div>`;
+
+    // ── 二、市场分析 ──
+    html += `<div class="bc-card">
+      <div class="bc-section-title">📊 二、市场分析</div>
+      <div class="bc-mkt-grid">
+        <div class="bc-mkt-cell">
+          <div class="bc-mkt-l">${esc(ckb.category||'')}市场</div>
+          <div class="bc-mkt-v">${esc(mkt.market_size||'待评估')}</div>
+          <div class="bc-mkt-n">${esc(mkt.yoy_growth ? '年增长 '+mkt.yoy_growth : '')}${src('ai')}</div>
+        </div>
+        <div class="bc-mkt-cell">
+          <div class="bc-mkt-l">你 vs 赛道头部</div>
+          <div class="bc-mkt-v">${esc(mkt.store_gap||'—')}</div>
+          <div class="bc-mkt-n">${esc(mkt.store_gap_note||'')}${src('chains')}</div>
+        </div>
+        <div class="bc-mkt-cell">
+          <div class="bc-mkt-l">近两年净增</div>
+          <div class="bc-mkt-v">${esc(mkt.expansion_trend||'—')}</div>
+          <div class="bc-mkt-n">${esc(mkt.expansion_note||'')}${src('ai')}</div>
+        </div>
+        <div class="bc-mkt-cell">
+          <div class="bc-mkt-l">核心市场</div>
+          <div class="bc-mkt-v">${esc(mkt.core_market||'—')}</div>
+          <div class="bc-mkt-n">${esc(mkt.core_market_note||'')}${src('ai')}</div>
+        </div>
+      </div>`;
+
+    if (mkt.market_bar_data && mkt.market_bar_data.length) {
+      const maxPct = Math.max(...mkt.market_bar_data.map(d => d.pct || 0)) || 1;
+      html += `<div style="margin-top:16px;"><div class="bc-sec-label-light">赛道规模对比 ${src('chains')}</div>`;
+      for (const d of mkt.market_bar_data) {
+        const pct = Math.round((d.pct / maxPct) * 100);
+        html += `<div class="bc-bar-row">
+          <div class="bc-bar-name${d.is_self?' self':''}">${esc(d.name)}${d.is_self?' ← 你':''}</div>
+          <div class="bc-bar-track"><div class="bc-bar-fill" style="width:${pct}%;background:${d.is_self?'#111827':'#D1D5DB'};"></div></div>
+          <div class="bc-bar-pct${d.is_self?' self':''}">${d.store_count != null ? d.store_count+'家' : ''}</div>
+        </div>`;
+      }
+      html += `</div>`;
     }
+
+    if (pos.axis_items && pos.axis_items.length) {
+      const prices = pos.axis_items.map(a => a.price_high || 0);
+      const maxP = Math.max(...prices) || 1;
+      html += `<div style="margin-top:16px;">
+        <div class="bc-sec-label-light">价格带定位 ${src('chains')} — 左右滑动查看</div>
+        <div class="bc-pos-scroll-wrap">
+          <div class="bc-pos-axis ${axisGrad}">
+            <div class="bc-pos-end">亲民<br>低价</div>
+            <div class="bc-pos-inner">`;
+      for (const item of pos.axis_items) {
+        const left = Math.round(((item.price_low||0) / maxP) * 80 + 5);
+        const label = item.is_self ? item.name + ' ← 你' : item.name;
+        const priceLabel = `${Math.round((item.price_low||0)/1000)}–${Math.round((item.price_high||0)/1000)}k`;
+        html += `<div class="bc-pos-bub ${item.is_self?'bc-pb-self':'bc-pb-other'}" style="left:${left}%">${esc(label)}<br>${priceLabel}</div>`;
+      }
+      html += `</div><div class="bc-pos-end">高端<br>高价</div>
+          </div>
+        </div>
+        <div class="bc-pos-hint">← 滑动 →</div>
+      </div>`;
+    }
+
+    if (social.length) {
+      html += `<div style="margin-top:16px;"><div class="bc-sec-label-light">社交媒体 — 左右滑动</div>
+        <div class="bc-social-scroll">`;
+      for (const s of social) {
+        html += `<div class="bc-social-card">
+          <div class="bc-soc-plat">${esc(s.platform)}</div>
+          <div class="bc-soc-handle">${esc(s.handle||'待核实')}</div>
+          <div class="bc-soc-val">${esc(s.followers||'—')}</div>
+          <div class="bc-soc-note">${esc(s.note||'')}${s.ai_inferred ? src('ai') : ''}</div>
+        </div>`;
+      }
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+
+    // ── 三、竞品分析 ──
+    html += `<div class="bc-card"><div class="bc-section-title">🔍 三、竞品分析</div>`;
+
+    // Find self avg for review bar reference (search across all tiers)
+    const allCompItems = [...(comps.head||[]), ...(comps.direct||[]), ...(comps.growth||[])];
+    const selfComp = allCompItems.find(c => c.is_self);
+    const selfAvgGlobal = selfComp ? (selfComp.avg_review_per_store||0) : avgReview;
+
+    function renderCompTier(tier, label, dotClass) {
+      const items = comps[tier] || [];
+      if (!items.length) return '';
+      let t = `<div class="bc-tier-label"><div class="bc-tier-dot ${dotClass}"></div>${label}</div>`;
+
+      for (const c of items) {
+        const isSelf = !!c.is_self;
+        const isWarn = !isSelf && !!c.is_warn;
+        const cardCls = isSelf ? 'bc-comp-card self-card' : isWarn ? 'bc-comp-card warn-card' : 'bc-comp-card';
+        const rating = c.rating || 0;
+        const rCls = ratingClass(rating);
+
+        // 3rd stat column: for head tier show ig_followers, otherwise avg_review
+        const isHead = tier === 'head';
+        const thirdLabel = isHead ? 'IG声量' : '单店均评论';
+        const thirdVal = isHead ? esc(c.ig_followers||'—') : (c.avg_review_per_store != null ? c.avg_review_per_store.toLocaleString() : '—');
+        const thirdSrc = isHead ? 'AI推断' : (isSelf ? '计算值' : '推断');
+        const thirdStyle = (!isHead && isSelf) ? ' style="color:#4338CA;"' : '';
+
+        t += `<div class="${cardCls}">
+          <div class="bc-comp-top">
+            <div>
+              <div class="bc-comp-name${isSelf?'':' other'}">${isSelf ? esc(c.name)+' ← 你' : esc(c.name)}</div>
+              <div class="bc-comp-sub">${esc(c.category||'')}${c.founded ? ' · ' + c.founded : ''}</div>
+            </div>
+            ${rating ? `<span class="bc-rating-badge ${rCls}">${rating.toFixed(1)}</span>` : ''}
+          </div>
+          <div class="bc-comp-stats">
+            <div class="bc-comp-stat"><div class="bc-cs-l">门店数</div><div class="bc-cs-v">${c.store_count != null ? c.store_count+'家' : '—'}</div><div class="bc-cs-src">chains</div></div>
+            <div class="bc-comp-stat"><div class="bc-cs-l">价格带</div><div class="bc-cs-v">${esc(c.price_band||'—')}</div><div class="bc-cs-src">chains</div></div>
+            <div class="bc-comp-stat"><div class="bc-cs-l">${thirdLabel}</div><div class="bc-cs-v"${thirdStyle}>${thirdVal}</div><div class="bc-cs-src">${thirdSrc}</div></div>
+          </div>`;
+
+        // Review compare bar (non-self, non-head, has avg data)
+        if (!isSelf && !isHead && c.avg_review_per_store != null && selfAvgGlobal) {
+          const maxV = Math.max(selfAvgGlobal, c.avg_review_per_store) || 1;
+          const selfPct = Math.round(selfAvgGlobal / maxV * 100);
+          const compPct = Math.round(c.avg_review_per_store / maxV * 100);
+          // Color: far above self = purple (top), warn card = red, else grey
+          const compFillCls = c.avg_review_per_store > selfAvgGlobal * 2 ? 'bc-rf-top' : isWarn ? 'bc-rf-warn' : 'bc-rf-other';
+          t += `<div class="bc-rc">
+            <div class="bc-rc-label">单店均评论对比 ${src('calc')}</div>
+            <div class="bc-rc-row"><div class="bc-rc-name self">你</div><div class="bc-rc-track"><div class="bc-rc-fill bc-rf-self" style="width:${selfPct}%"></div></div><div class="bc-rc-num">${selfAvgGlobal.toLocaleString()}</div></div>
+            <div class="bc-rc-row"><div class="bc-rc-name">${esc(c.name)}</div><div class="bc-rc-track"><div class="bc-rc-fill ${compFillCls}" style="width:${compPct}%"></div></div><div class="bc-rc-num">${c.avg_review_per_store.toLocaleString()}</div></div>
+          </div>`;
+        }
+
+        if (c.insight) {
+          t += `<div class="bc-comp-insight${isSelf?' bc-ci-self':''}">${esc(c.insight)}</div>`;
+        }
+        t += `</div>`;
+      }
+      return t;
+    }
+
+    html += renderCompTier('head', '头部参照', 'bc-td-head');
+    html += renderCompTier('direct', '直接竞争', 'bc-td-direct');
+    html += renderCompTier('growth', '成长型标杆', 'bc-td-growth');
+    html += `</div>`;
+
+    // ── 四、能力分析 ──
+    html += `<div class="bc-card">
+      <div class="bc-section-title">⚡ 四、能力分析</div>
+      <div class="bc-mtabs">
+        <button class="bc-mtab active" onclick="${tabFnName}('${tabPrefix}-basic',this)">基础能力</button>
+        <button class="bc-mtab" onclick="${tabFnName}('${tabPrefix}-growth',this)">成长能力</button>
+        <button class="bc-mtab" onclick="${tabFnName}('${tabPrefix}-scale',this)">复制能力</button>
+      </div>`;
+
+    for (const [key] of [['basic'],['growth'],['scale']]) {
+      html += `<div id="${tabPrefix}-${key}" class="bc-mpanel${key==='basic'?' active':''}">`;
+      for (const row of (ability[key]||[])) {
+        const dotCls = row.level === 'strong' ? 'bc-ad-strong' : row.level === 'mid' ? 'bc-ad-mid' : 'bc-ad-weak';
+        html += `<div class="bc-ability-row">
+          <div class="bc-ability-dot ${dotCls}"></div>
+          <div><div class="bc-ability-text">${esc(row.title)}</div><div class="bc-ability-module">→ 平台模块：${esc(row.module)}</div></div>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `<div class="bc-divider"></div>
+    <div class="bc-diag">
+      <div class="bc-diag-step"><div class="bc-diag-ico bc-di-b">📊</div><div class="bc-diag-body"><div class="bc-diag-lbl">因为</div><div class="bc-diag-txt">${esc(diag.because||'')} ${src('places')}${src('chains')}</div></div></div>
+      <div class="bc-diag-step"><div class="bc-diag-ico bc-di-t">🔎</div><div class="bc-diag-body"><div class="bc-diag-lbl">所以</div><div class="bc-diag-txt">${esc(diag.therefore||'')} ${src('ai')}</div></div></div>
+      <div class="bc-diag-step"><div class="bc-diag-ico bc-di-a">→</div><div class="bc-diag-body"><div class="bc-diag-lbl">建议</div><div class="bc-diag-txt">${esc(diag.action||'')}</div>
+        <button class="bc-cta-btn" onclick="goToMain()">开始分析单店数据 →</button>
+      </div></div>
+    </div>`;
+
+    html += `</div>`;
+
+    html += `<div class="bc-legend">
+      <div class="bc-legend-row"><div class="bc-ldot bc-lp"></div>Google Places API · ${sampleSize}家样本 · 实时</div>
+      <div class="bc-legend-row"><div class="bc-ldot bc-lc"></div>chains.json · 行业离线库</div>
+      <div class="bc-legend-row"><div class="bc-ldot bc-lk"></div>计算值 · 基于以上两项推导</div>
+      <div class="bc-legend-row"><div class="bc-ldot bc-ll"></div>AI推断 · 基于公开信息，建议核实</div>
+    </div>`;
+
+    container.innerHTML = html;
   }
 
-  function showGenDone() {
-    document.getElementById('gen-loading').style.display = 'none';
-    document.getElementById('gen-done').style.display = 'block';
-  }
-
-  function goToMain() {
-    window.location.replace('/index.html');
-  }
-
-  function skipToMain() {
-    window.location.replace('/index.html?skip_onboarding=1');
+  function bcTab(panelId, btn) {
+    const card = btn.closest('.bc-card');
+    card.querySelectorAll('.bc-mpanel').forEach(p => p.classList.remove('active'));
+    card.querySelectorAll('.bc-mtab').forEach(t => t.classList.remove('active'));
+    document.getElementById(panelId).classList.add('active');
+    btn.classList.add('active');
   }
 
   // Init

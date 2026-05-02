@@ -1002,6 +1002,127 @@
       border-left: 3px solid var(--accent);
     }
 
+    /* Brand Canvas (bc-) styles — shared with onboarding.html */
+    #kb-modal-body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; }
+    #kb-modal-body .bc-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 10px; overflow: hidden; }
+    #kb-modal-body .bc-card-dark { background: #111827; border-radius: 14px; padding: 16px; margin-bottom: 10px; overflow: hidden; overflow-wrap: break-word; word-break: break-word; }
+    #kb-modal-body .bc-sec-label { font-size: 9px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 12px; }
+    #kb-modal-body .bc-sec-label-light { font-size: 9px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #C0C4CC; margin-bottom: 12px; }
+    #kb-modal-body .bc-brand-head { display: flex; gap: 12px; align-items: flex-start; }
+    #kb-modal-body .bc-brand-ico { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    #kb-modal-body .bc-brand-name { font-size: 18px; font-weight: 700; color: #111827; line-height: 1.2; }
+    #kb-modal-body .bc-brand-sub { font-size: 11px; color: #999; margin-top: 3px; }
+    #kb-modal-body .bc-badges { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+    #kb-modal-body .bc-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+    #kb-modal-body .bc-b-local { background:#EEF2FF;color:#4338CA; } #kb-modal-body .bc-b-cn { background:#FEF2F2;color:#DC2626; }
+    #kb-modal-body .bc-b-cat { background:#F0FDF4;color:#15803D; } #kb-modal-body .bc-b-size { background:#FFF7ED;color:#C2410C; }
+    #kb-modal-body .bc-b-warn { background:#FFFBEB;color:#B45309; } #kb-modal-body .bc-b-new { background:#FFF1F2;color:#E11D48; }
+    #kb-modal-body .bc-src { display:inline-block;font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;vertical-align:middle;margin-left:3px;opacity:0.7; }
+    #kb-modal-body .bc-sp { background:#EEF2FF;color:#4338CA; } #kb-modal-body .bc-sc { background:#F0FDF4;color:#15803D; }
+    #kb-modal-body .bc-sk { background:#FFF7ED;color:#C2410C; } #kb-modal-body .bc-sl { background:#F3F4F6;color:#6B7280; }
+    #kb-modal-body .bc-kpi-grid { display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;margin-top:14px; }
+    #kb-modal-body .bc-kpi-cell { background:rgba(255,255,255,0.05);padding:12px 14px; }
+    #kb-modal-body .bc-kpi-v { font-size:20px;font-weight:700;color:white; }
+    #kb-modal-body .bc-kpi-l { font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;line-height:1.3; }
+    #kb-modal-body .bc-kpi-s { font-size:8px;color:rgba(255,255,255,0.2);margin-top:3px; }
+    #kb-modal-body .bc-kpi-d { font-size:10px;font-weight:600;margin-top:3px; }
+    #kb-modal-body .bc-d-up { color:#4ADE80; } #kb-modal-body .bc-d-dn { color:#F87171; } #kb-modal-body .bc-d-mid { color:#FCD34D; }
+    #kb-modal-body .bc-summary { font-size:13px;line-height:1.75;color:rgba(255,255,255,0.82);word-break:break-all;overflow-wrap:break-word; }
+    #kb-modal-body .bc-summary strong { color:white; }
+    #kb-modal-body .bc-bullets { margin-top:12px;display:flex;flex-direction:column;gap:8px; }
+    #kb-modal-body .bc-bullet { display:flex;gap:8px;font-size:12px;color:rgba(255,255,255,0.72);line-height:1.6; }
+    #kb-modal-body .bc-bullet span:last-child { min-width:0;overflow-wrap:break-word;word-break:break-all;flex:1; }
+    #kb-modal-body .bc-bullet strong { color:white; }
+    #kb-modal-body .bc-bullet-num { background:rgba(255,255,255,0.1);color:white;font-weight:700;font-size:10px;min-width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px; }
+    #kb-modal-body .bc-section-title { font-size:13px;font-weight:700;color:#111827;margin-bottom:12px;display:flex;align-items:center;gap:6px; }
+    #kb-modal-body .bc-mkt-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+    #kb-modal-body .bc-mkt-cell { background:#F8FAFC;border-radius:10px;padding:12px; }
+    #kb-modal-body .bc-mkt-l { font-size:10px;color:#999;margin-bottom:4px;line-height:1.3; }
+    #kb-modal-body .bc-mkt-v { font-size:15px;font-weight:700;color:#111827;line-height:1.2; }
+    #kb-modal-body .bc-mkt-n { font-size:10px;color:#aaa;margin-top:3px;line-height:1.4; }
+    #kb-modal-body .bc-bar-row { display:flex;align-items:center;gap:8px;margin-bottom:6px; }
+    #kb-modal-body .bc-bar-name { font-size:11px;color:#555;width:96px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    #kb-modal-body .bc-bar-name.self { color:#111827;font-weight:700; }
+    #kb-modal-body .bc-bar-track { flex:1;min-width:0;height:7px;background:#F0F0F0;border-radius:4px;overflow:hidden; }
+    #kb-modal-body .bc-bar-fill { height:100%;border-radius:4px; }
+    #kb-modal-body .bc-bar-pct { font-size:10px;color:#aaa;width:40px;text-align:right;flex-shrink:0; }
+    #kb-modal-body .bc-bar-pct.self { color:#111827;font-weight:700; }
+    #kb-modal-body .bc-pos-scroll-wrap { overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -16px;padding:0 16px; }
+    #kb-modal-body .bc-pos-scroll-wrap::-webkit-scrollbar { display:none; }
+    #kb-modal-body .bc-pos-axis { display:flex;align-items:center;gap:0;min-width:600px;height:52px;border-radius:26px;position:relative;padding:0 12px; }
+    #kb-modal-body .bc-pos-warm { background:linear-gradient(to right,#EFF6FF,#FEF9C3,#FEF2F2); }
+    #kb-modal-body .bc-pos-cool { background:linear-gradient(to right,#F0FDF4,#FEF9C3,#FEF3C7); }
+    #kb-modal-body .bc-pos-end { font-size:9px;color:#aaa;flex-shrink:0;white-space:nowrap;padding:0 8px; }
+    #kb-modal-body .bc-pos-inner { flex:1;position:relative;height:100%; }
+    #kb-modal-body .bc-pos-bub { position:absolute;top:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:700;padding:4px 8px;border-radius:20px;white-space:nowrap; }
+    #kb-modal-body .bc-pb-self { background:#111827;color:white;box-shadow:0 2px 6px rgba(0,0,0,0.25);z-index:2; }
+    #kb-modal-body .bc-pb-other { background:white;color:#888;border:1px solid #E5E7EB;box-shadow:0 1px 3px rgba(0,0,0,0.08);font-weight:500;z-index:1; }
+    #kb-modal-body .bc-pos-hint { font-size:10px;color:#aaa;margin-top:6px; }
+    #kb-modal-body .bc-social-scroll { display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -16px;padding:0 16px 4px; }
+    #kb-modal-body .bc-social-scroll::-webkit-scrollbar { display:none; }
+    #kb-modal-body .bc-social-card { background:#F8FAFC;border-radius:10px;padding:12px 14px;flex-shrink:0;width:150px; }
+    #kb-modal-body .bc-soc-plat { font-size:9px;font-weight:700;color:#aaa;letter-spacing:0.5px;margin-bottom:5px; }
+    #kb-modal-body .bc-soc-handle { font-size:11px;color:#4338CA;font-weight:600; }
+    #kb-modal-body .bc-soc-val { font-size:15px;font-weight:700;color:#111827;margin-top:4px; }
+    #kb-modal-body .bc-soc-note { font-size:10px;color:#aaa;margin-top:2px;line-height:1.4; }
+    #kb-modal-body .bc-tier-label { font-size:10px;font-weight:700;color:#aaa;letter-spacing:0.8px;margin:16px 0 10px;display:flex;align-items:center;gap:6px; }
+    #kb-modal-body .bc-tier-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0; }
+    #kb-modal-body .bc-td-head { background:#6366F1; } #kb-modal-body .bc-td-direct { background:#F59E0B; } #kb-modal-body .bc-td-growth { background:#10B981; }
+    #kb-modal-body .bc-comp-card { background:#F8FAFC;border-radius:12px;padding:14px;margin-bottom:8px;width:100%;max-width:100%;overflow:hidden;box-sizing:border-box; }
+    #kb-modal-body .bc-comp-card.self-card { background:#F0F4FF;border:1.5px solid #C7D2FE; }
+    #kb-modal-body .bc-comp-card.warn-card { background:#FFF8F0;border:1.5px solid #FDE68A; }
+    #kb-modal-body .bc-comp-top { display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px; }
+    #kb-modal-body .bc-comp-name { font-size:13px;font-weight:700;color:#111827; }
+    #kb-modal-body .bc-comp-name.other { color:#555; }
+    #kb-modal-body .bc-comp-sub { font-size:10px;color:#aaa;margin-top:1px; }
+    #kb-modal-body .bc-rating-badge { font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px; }
+    #kb-modal-body .bc-r-hi { background:#F0FDF4;color:#15803D; } #kb-modal-body .bc-r-md { background:#FFFBEB;color:#B45309; } #kb-modal-body .bc-r-lo { background:#FEF2F2;color:#DC2626; }
+    #kb-modal-body .bc-comp-stats { display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px; }
+    #kb-modal-body .bc-comp-stat { background:white;border-radius:8px;padding:8px 10px; }
+    #kb-modal-body .bc-cs-l { font-size:9px;color:#aaa;margin-bottom:2px; }
+    #kb-modal-body .bc-cs-v { font-size:13px;font-weight:700;color:#111827; }
+    #kb-modal-body .bc-cs-src { font-size:8px;color:#ccc;margin-top:1px; }
+    #kb-modal-body .bc-rc { margin-top:10px; }
+    #kb-modal-body .bc-rc-label { font-size:10px;color:#888;margin-bottom:5px; }
+    #kb-modal-body .bc-rc-row { display:flex;align-items:center;gap:8px;margin-bottom:4px; }
+    #kb-modal-body .bc-rc-name { font-size:10px;color:#666;width:80px;flex-shrink:0; }
+    #kb-modal-body .bc-rc-name.self { color:#111827;font-weight:700; }
+    #kb-modal-body .bc-rc-track { flex:1;min-width:0;height:6px;background:#F0F0F0;border-radius:3px;overflow:hidden; }
+    #kb-modal-body .bc-rc-fill { height:100%;border-radius:3px; }
+    #kb-modal-body .bc-rf-self { background:#111827; } #kb-modal-body .bc-rf-other { background:#D1D5DB; }
+    #kb-modal-body .bc-rf-top { background:#6366F1; } #kb-modal-body .bc-rf-warn { background:#EF4444; }
+    #kb-modal-body .bc-rc-num { font-size:10px;font-weight:600;width:44px;text-align:right;flex-shrink:0; }
+    #kb-modal-body .bc-comp-insight { background:white;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:11px;color:#555;line-height:1.6;border-left:3px solid #E5E7EB;overflow-wrap:break-word;word-break:break-all; }
+    #kb-modal-body .bc-comp-insight strong { color:#111827; }
+    #kb-modal-body .bc-ci-self { border-left-color:#6366F1;background:#F5F3FF; }
+    #kb-modal-body .bc-mtabs { display:flex;gap:6px;margin-bottom:12px; }
+    #kb-modal-body .bc-mtab { flex:1;text-align:center;font-size:11px;font-weight:600;padding:7px 4px;border-radius:8px;cursor:pointer;background:#F3F4F6;color:#888;transition:all 0.15s;border:none;font-family:inherit; }
+    #kb-modal-body .bc-mtab.active { background:#111827;color:white; }
+    #kb-modal-body .bc-mpanel { display:none; }
+    #kb-modal-body .bc-mpanel.active { display:block; }
+    #kb-modal-body .bc-ability-row { display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #F3F4F6; }
+    #kb-modal-body .bc-ability-row:last-child { border-bottom:none; }
+    #kb-modal-body .bc-ability-dot { width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px; }
+    #kb-modal-body .bc-ad-strong { background:#22C55E; } #kb-modal-body .bc-ad-mid { background:#F59E0B; } #kb-modal-body .bc-ad-weak { background:#EF4444; }
+    #kb-modal-body .bc-ability-text { font-size:12px;color:#444;line-height:1.5;flex:1; }
+    #kb-modal-body .bc-ability-module { font-size:10px;color:#aaa;margin-top:2px; }
+    #kb-modal-body .bc-divider { height:1px;background:#F0F0F0;margin:4px 0 14px; }
+    #kb-modal-body .bc-diag { display:flex;flex-direction:column;gap:0; }
+    #kb-modal-body .bc-diag-step { display:flex;gap:12px;position:relative; }
+    #kb-modal-body .bc-diag-step:not(:last-child)::after { content:'';position:absolute;left:13px;top:30px;width:2px;height:calc(100% - 8px);background:#F0F0F0; }
+    #kb-modal-body .bc-diag-ico { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;position:relative;z-index:1;margin-top:1px; }
+    #kb-modal-body .bc-di-b { background:#FEF9C3; } #kb-modal-body .bc-di-t { background:#DBEAFE; } #kb-modal-body .bc-di-a { background:#111827;color:white; }
+    #kb-modal-body .bc-diag-body { padding-bottom:16px;flex:1; }
+    #kb-modal-body .bc-diag-lbl { font-size:9px;font-weight:700;letter-spacing:1px;color:#ccc;text-transform:uppercase;margin-bottom:3px; }
+    #kb-modal-body .bc-diag-txt { font-size:12px;color:#444;line-height:1.7; }
+    #kb-modal-body .bc-diag-txt strong { color:#111827; }
+    #kb-modal-body .bc-cta-btn { display:inline-flex;align-items:center;justify-content:center;gap:6px;color:white;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;margin-top:8px;text-decoration:none;width:100%;cursor:pointer;border:none;font-family:inherit;background:#4338CA; }
+    #kb-modal-body .bc-legend { background:#F9FAFB;border:1px solid #F0F0F0;border-radius:10px;padding:12px 14px;margin-top:10px;display:flex;flex-direction:column;gap:6px; }
+    #kb-modal-body .bc-legend-row { display:flex;align-items:center;gap:6px;font-size:10px;color:#aaa; }
+    #kb-modal-body .bc-ldot { width:8px;height:8px;border-radius:2px;flex-shrink:0; }
+    #kb-modal-body .bc-lp { background:#4338CA; } #kb-modal-body .bc-lc { background:#15803D; } #kb-modal-body .bc-lk { background:#C2410C; } #kb-modal-body .bc-ll { background:#9CA3AF; }
+    #kb-modal-body .bc-canvas-wrap { padding: 12px 12px 24px; box-sizing: border-box; }
+
     /* File list styles */
     .kb-detail-item {
       display: flex; align-items: center; gap: 8px;
@@ -1531,199 +1652,252 @@
     const title = document.getElementById('kb-modal-title');
     const body = document.getElementById('kb-modal-body');
     const brandName = currentUser?.merchant?.name || '商家';
-    title.textContent = brandName + ' · 品牌简报';
+    title.textContent = brandName + ' · 品牌画像';
     body.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">加载中...</div>';
     modal.classList.remove('hidden');
     try {
-      const res = await fetch(`${API}/kb/brief`, { credentials: 'include' });
+      const res = await fetch(`${API}/onboarding/profile`, { credentials: 'include' });
       const data = await res.json();
-      if (!data.text) {
-        body.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">暂无品牌简报，请先完成品牌设置。</div>';
+      if (!data.profile_json) {
+        body.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">暂无品牌画像，请先完成品牌设置。</div>';
         return;
       }
-      body.innerHTML = renderBriefHTML(data.text, data.brand_name || brandName);
+      const wrap = document.createElement('div');
+      wrap.className = 'bc-canvas-wrap';
+      renderBrandCanvasInto(data, wrap);
+      body.innerHTML = '';
+      body.appendChild(wrap);
     } catch {
       body.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:32px;text-align:center">加载失败</div>';
     }
   }
 
-  function renderBriefHTML(markdown, brandName) {
-    // Parse markdown into structured sections
-    const lines = markdown.split('\n');
-    const sections = [];
-    let currentSection = null;
-    let summaryText = '';
+  // ── Brand Canvas Renderer (shared with onboarding.html) ──────────────────
+  function _bcEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _bcSafeHtml(s) { return _bcEsc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/&lt;strong&gt;(.+?)&lt;\/strong&gt;/g,'<strong>$1</strong>'); }
+  function _bcSrc(type) {
+    const map = { places:'<span class="bc-src bc-sp">Places</span>', chains:'<span class="bc-src bc-sc">chains</span>', calc:'<span class="bc-src bc-sk">计算值</span>', ai:'<span class="bc-src bc-sl">AI推断</span>' };
+    return map[type] || '';
+  }
+  function _bcRatingClass(r) { return r >= 4.5 ? 'bc-r-hi' : r >= 4.0 ? 'bc-r-md' : 'bc-r-lo'; }
 
-    const SECTION_ICONS = {
-      '平台扫描摘要': { icon: '🔍', bg: '#eff6ff', color: '#1d4ed8', highlight: true },
-      '品牌概况': { icon: '🏪', bg: '#dbeafe', color: '#1d4ed8' },
-      '产品与菜单': { icon: '☕', bg: '#fef3c7', color: '#92400e' },
-      '市场表现': { icon: '📈', bg: '#d1fae5', color: '#065f46' },
-      '竞争格局': { icon: '⚔️', bg: '#fce7f3', color: '#9d174d' },
-      '经营特点': { icon: '⚙️', bg: '#ede9fe', color: '#5b21b6' },
-      '营销策略': { icon: '📣', bg: '#fff7ed', color: '#c2410c' },
-    };
+  function renderBrandCanvasInto(profile, container) {
+    const p = profile.profile_json;
+    const m = profile.meta || {};
+    const ckb = profile.chain_kb || {};
+    const brandName = profile.brand_name || '商家';
+    const ss = p.scan_summary || {};
+    const mkt = p.market || {};
+    const pos = p.positioning || {};
+    const social = p.social || [];
+    const comps = p.competitors || {};
+    const ability = p.ability || {};
+    const diag = p.diagnosis || {};
 
-    // Extract key stats from content
-    let storeCount = '', priceRange = '', stage = '';
-    const storeMatch = markdown.match(/(\d+)\s*家/);
-    if (storeMatch) storeCount = storeMatch[1] + ' 家';
-    const priceMatch = markdown.match(/Rp\s*[\d,]+\s*[–-]\s*[\d,]+/);
-    if (priceMatch) priceRange = priceMatch[0];
-    const stageMatch = markdown.match(/快速扩张|初创|稳定经营|增长停滞/);
-    if (stageMatch) stage = stageMatch[0];
+    const sampleSize = m.sample_size || 1;
+    const avgReview = m.avg_review_per_store || 0;
+    const industryAvg = 4.4;
+    const ratingDelta = m.rating ? (m.rating - industryAvg).toFixed(1) : null;
 
-    let lastParentItem = null;
-    for (const line of lines) {
-      if (line.startsWith('## ')) {
-        if (currentSection) sections.push(currentSection);
-        const sectionName = line.slice(3).trim();
-        currentSection = { title: sectionName, items: [], meta: SECTION_ICONS[sectionName] || { icon: '📋', bg: '#f1f5f9', color: '#475569' } };
-        lastParentItem = null;
-      } else if (line.includes('【分析师总结') || line.includes('总结与启示')) {
-        if (currentSection) { sections.push(currentSection); currentSection = null; }
-        summaryText = line.replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
-        lastParentItem = null;
-      } else if (summaryText && line.trim() && !line.startsWith('#')) {
-        summaryText += ' ' + line.replace(/\*\*/g, '').trim();
-      } else if (currentSection) {
-        // Sub-bullet: starts with 2+ spaces + * or -
-        const isSubBullet = /^(\s{2,}|\t)[*-]/.test(line);
-        // Top-level bullet: * item, - item
-        const isTopBullet = /^[*-]\s+/.test(line);
-        // Bold-label line: **label**：content  or  **label**: content (Gemini output format)
-        const boldLabelMatch = !isSubBullet && !isTopBullet && line.match(/^\*\*(.+?)\*\*[：:]\s*(.*)/);
+    const catIcoMap = {'咖啡':'#FFF7ED','茶':'#FEF2F2','奶茶':'#FEF2F2','tea':'#FEF2F2','coffee':'#FFF7ED','鸡':'#F0FDF4','炸鸡':'#F0FDF4','快餐':'#FEF9C3'};
+    const catLower = (ckb.category||'').toLowerCase();
+    let icoColor = '#F3F4F6';
+    for (const [k,v] of Object.entries(catIcoMap)) { if (catLower.includes(k)) { icoColor = v; break; } }
+    const icoEmoji = catLower.includes('咖啡')||catLower.includes('coffee') ? '☕' : catLower.includes('茶')||catLower.includes('tea') ? '🍵' : catLower.includes('鸡')||catLower.includes('chicken') ? '🍗' : '🏪';
+    const isCn = ckb.origin === 'CN';
+    const axisGrad = (catLower.includes('茶')||catLower.includes('tea')) ? 'bc-pos-cool' : 'bc-pos-warm';
+    const _tabPrefix = 'bcm-' + Date.now();
 
-        if (isSubBullet) {
-          const text = line.replace(/^\s+[*-]\s+/, '').trim();
-          if (!text) continue;
-          if (lastParentItem !== null) {
-            currentSection.items[lastParentItem] += '\n  › ' + text;
-          } else {
-            currentSection.items.push('  › ' + text);
-          }
-        } else if (boldLabelMatch) {
-          const label = boldLabelMatch[1].trim();
-          const content = boldLabelMatch[2].trim();
-          const text = content ? `**${label}**：${content}` : `**${label}**`;
-          lastParentItem = currentSection.items.length;
-          currentSection.items.push(text);
-        } else if (isTopBullet) {
-          const text = line.replace(/^[*-]\s+/, '').trim();
-          if (!text) continue;
-          lastParentItem = currentSection.items.length;
-          currentSection.items.push(text);
-        } else if (line.trim() && !line.startsWith('#')) {
-          const trimmed = line.trim();
-          if (lastParentItem !== null && currentSection.title !== '平台扫描摘要') {
-            // Continuation of previous bold-label item
-            currentSection.items[lastParentItem] += ' ' + trimmed;
-          } else {
-            // Plain text line (scan summary sentences — each on its own line)
-            lastParentItem = currentSection.items.length;
-            currentSection.items.push(trimmed);
-          }
-        }
-      }
-    }
-    if (currentSection) sections.push(currentSection);
-
-    // Build HTML
     let html = '';
 
-    // Hero banner
-    html += `<div class="brief-hero">
-      <div class="brief-avatar">🏪</div>
-      <div>
-        <div class="brief-hero-name">${escapeHtml(brandName)}</div>
-        <div class="brief-hero-sub">品牌经营简报</div>
+    // 品牌头
+    html += `<div class="bc-card" style="margin-top:0;">
+      <div class="bc-brand-head">
+        <div class="bc-brand-ico" style="background:${icoColor}">${icoEmoji}</div>
+        <div>
+          <div class="bc-brand-name">${_bcEsc(brandName)}</div>
+          <div class="bc-brand-sub">${_bcEsc(ckb.category||'')}${ckb.founded ? ' · ' + ckb.founded + '年创立' : ''}</div>
+          <div class="bc-badges">
+            ${isCn ? '<span class="bc-badge bc-b-cn">🇨🇳 中国品牌</span>' : '<span class="bc-badge bc-b-local">🇮🇩 印尼本土</span>'}
+            ${ckb.category ? `<span class="bc-badge bc-b-cat">${_bcEsc(ckb.category)}</span>` : ''}
+            ${ckb.storeCount ? `<span class="bc-badge bc-b-size">${ckb.storeCount}家门店</span>` : ''}
+            ${ckb.expansion && ckb.expansion.includes('停滞') ? `<span class="bc-badge bc-b-warn">⚠️ 扩张停滞</span>` : ''}
+            ${ckb.founded && parseInt(ckb.founded) >= 2022 ? `<span class="bc-badge bc-b-new">🆕 新品牌</span>` : ''}
+          </div>
+        </div>
       </div>
     </div>`;
 
-    // Pull out scan summary section to render first
-    const scanIdx = sections.findIndex(s => s.title === '平台扫描摘要');
-    const scanSection = scanIdx >= 0 ? sections.splice(scanIdx, 1)[0] : null;
+    // 一、品牌分析
+    html += `<div class="bc-card-dark">
+      <div class="bc-sec-label">一、品牌分析</div>
+      <div class="bc-summary">${_bcSafeHtml(ss.mirror||'')}</div>
+      <div class="bc-bullets">
+        <div class="bc-bullet"><span class="bc-bullet-num">1</span><span>${_bcSafeHtml(ss.window||'')}</span></div>
+        <div class="bc-bullet"><span class="bc-bullet-num">2</span><span>${_bcSafeHtml(ss.door||'')}</span></div>
+        ${ss.action ? `<div class="bc-bullet"><span class="bc-bullet-num">3</span><span>${_bcSafeHtml(ss.action)}</span></div>` : ''}
+      </div>
+      <div class="bc-kpi-grid">
+        <div class="bc-kpi-cell">
+          <div class="bc-kpi-v">${m.rating ? m.rating.toFixed(1) : '—'}</div>
+          <div class="bc-kpi-l">Google评分</div>
+          <div class="bc-kpi-s">Places · ${sampleSize}家样本</div>
+          ${ratingDelta !== null ? `<div class="bc-kpi-d ${parseFloat(ratingDelta)>=0?'bc-d-up':'bc-d-dn'}">${parseFloat(ratingDelta)>=0?'↑':'↓'} ${parseFloat(ratingDelta)>=0?'高于':'低于'}均值 ${industryAvg}</div>` : ''}
+        </div>
+        <div class="bc-kpi-cell">
+          <div class="bc-kpi-v">${avgReview ? avgReview.toLocaleString() : '—'}</div>
+          <div class="bc-kpi-l">单店均评论数</div>
+          <div class="bc-kpi-s">计算值 ÷ ${sampleSize}</div>
+          <div class="bc-kpi-d bc-d-up">↑ 赛道参照</div>
+        </div>
+        <div class="bc-kpi-cell">
+          <div class="bc-kpi-v">${m.review_count ? m.review_count.toLocaleString() : '—'}</div>
+          <div class="bc-kpi-l">总评论（样本）</div>
+          <div class="bc-kpi-s">Places · ${sampleSize}家</div>
+          <div class="bc-kpi-d bc-d-up">↑ 样本合计</div>
+        </div>
+        <div class="bc-kpi-cell">
+          <div class="bc-kpi-v">${ckb.priceBand ? ckb.priceBand.replace('Rp ','').replace('Rp','') : '—'}</div>
+          <div class="bc-kpi-l">价格带</div>
+          <div class="bc-kpi-s">chains.json</div>
+          <div class="bc-kpi-d bc-d-mid">→ ${ckb.priceBand && parseInt(ckb.priceBand.replace(/\D/g,'').slice(0,3)) >= 40 ? '高端区间' : '大众区间'}</div>
+        </div>
+      </div>
+    </div>`;
 
-    // Scan summary card — right after hero, before stats
-    // New users: use dedicated scan section; old users: fall back to summaryText
-    const scanText = scanSection?.items.length
-      ? scanSection.items.join(' ')
-      : summaryText ? summaryText.replace(/^【.+?】/, '').trim() : '';
-    if (scanText) {
-      // Split into sentences for paragraph display
-      const sentences = scanText
-        .split(/(?<=[。！？\n])\s*/)
-        .map(s => s.trim())
-        .filter(s => s.length > 2);
-      const icons = ['💡', '⚡', '🎯'];
-      const sentenceHtml = sentences.slice(0, 3).map((s, i) =>
-        `<div style="display:flex;align-items:flex-start;gap:8px;${i > 0 ? 'margin-top:8px;padding-top:8px;border-top:1px solid #bfdbfe' : ''}">
-          <span style="flex-shrink:0;font-size:14px">${icons[i] || '•'}</span>
-          <div style="font-size:13px;line-height:1.65;color:#1e3a8a">${inlineMd(s)}</div>
-        </div>`
-      ).join('');
-      html += `<div style="padding:14px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe">
-        <div style="font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px">🔍 平台首次扫描</div>
-        ${sentenceHtml}
+    // 二、市场分析
+    html += `<div class="bc-card">
+      <div class="bc-section-title">📊 二、市场分析</div>
+      <div class="bc-mkt-grid">
+        <div class="bc-mkt-cell"><div class="bc-mkt-l">${_bcEsc(ckb.category||'')}市场</div><div class="bc-mkt-v">${_bcEsc(mkt.market_size||'待评估')}</div><div class="bc-mkt-n">${_bcEsc(mkt.yoy_growth ? '年增长 '+mkt.yoy_growth : '')}${_bcSrc('ai')}</div></div>
+        <div class="bc-mkt-cell"><div class="bc-mkt-l">你 vs 赛道头部</div><div class="bc-mkt-v">${_bcEsc(mkt.store_gap||'—')}</div><div class="bc-mkt-n">${_bcEsc(mkt.store_gap_note||'')}${_bcSrc('chains')}</div></div>
+        <div class="bc-mkt-cell"><div class="bc-mkt-l">近两年净增</div><div class="bc-mkt-v">${_bcEsc(mkt.expansion_trend||'—')}</div><div class="bc-mkt-n">${_bcEsc(mkt.expansion_note||'')}${_bcSrc('ai')}</div></div>
+        <div class="bc-mkt-cell"><div class="bc-mkt-l">核心市场</div><div class="bc-mkt-v">${_bcEsc(mkt.core_market||'—')}</div><div class="bc-mkt-n">${_bcEsc(mkt.core_market_note||'')}${_bcSrc('ai')}</div></div>
       </div>`;
-      summaryText = '';
-    }
 
-    // Stats bar
-    if (storeCount || priceRange || stage) {
-      html += `<div class="brief-stats">`;
-      if (storeCount) html += `<div class="brief-stat"><div class="brief-stat-value">${escapeHtml(storeCount)}</div><div class="brief-stat-label">门店规模</div></div>`;
-      if (priceRange) html += `<div class="brief-stat"><div class="brief-stat-value" style="font-size:12px">${escapeHtml(priceRange)}</div><div class="brief-stat-label">价格带</div></div>`;
-      if (stage) html += `<div class="brief-stat"><div class="brief-stat-value" style="font-size:13px;color:#059669">${escapeHtml(stage)}</div><div class="brief-stat-label">经营阶段</div></div>`;
+    if (mkt.market_bar_data && mkt.market_bar_data.length) {
+      const maxPct = Math.max(...mkt.market_bar_data.map(d => d.pct || 0)) || 1;
+      html += `<div style="margin-top:16px;"><div class="bc-sec-label-light">赛道规模对比 ${_bcSrc('chains')}</div>`;
+      for (const d of mkt.market_bar_data) {
+        const pct = Math.round((d.pct / maxPct) * 100);
+        html += `<div class="bc-bar-row"><div class="bc-bar-name${d.is_self?' self':''}">${_bcEsc(d.name)}${d.is_self?' ← 你':''}</div><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${pct}%;background:${d.is_self?'#111827':'#D1D5DB'};"></div></div><div class="bc-bar-pct${d.is_self?' self':''}">${d.store_count != null ? d.store_count+'家' : ''}</div></div>`;
+      }
       html += `</div>`;
     }
 
-    // Sections
-    html += `<div class="brief-sections">`;
-    for (const sec of sections) {
-      if (!sec.items.length) continue;
-      html += `<div class="brief-section">
-        <div class="brief-section-header">
-          <div class="brief-section-icon" style="background:${sec.meta.bg}">${sec.meta.icon}</div>
-          <div class="brief-section-title">${escapeHtml(sec.title)}</div>
-        </div>
-        <div class="brief-section-body">`;
-      for (const item of sec.items.slice(0, 10)) {
-        if (item.startsWith('  › ')) {
-          const safe = inlineMd(item.slice(4));
-          html += `<div class="brief-item brief-sub"><div class="brief-item-dot sub"></div><div>${safe}</div></div>`;
-        } else {
-          const parts = item.split('\n  › ');
-          const mainRaw = parts[0];
-          const isLabelOnly = /：$/.test(mainRaw.replace(/\*\*/g, '')) && parts.length > 1;
-          if (isLabelOnly) {
-            html += `<div class="brief-item"><div class="brief-item-dot"></div><div style="font-weight:600;color:var(--text-muted);font-size:12px">${inlineMd(mainRaw)}</div></div>`;
-          } else {
-            html += `<div class="brief-item"><div class="brief-item-dot"></div><div>${inlineMd(mainRaw)}</div></div>`;
-          }
-          for (const sub of parts.slice(1)) {
-            html += `<div class="brief-item brief-sub"><div class="brief-item-dot sub"></div><div>${inlineMd(sub)}</div></div>`;
-          }
-        }
+    if (pos.axis_items && pos.axis_items.length) {
+      const prices = pos.axis_items.map(a => a.price_high || 0);
+      const maxP = Math.max(...prices) || 1;
+      html += `<div style="margin-top:16px;"><div class="bc-sec-label-light">价格带定位 ${_bcSrc('chains')} — 左右滑动查看</div>
+        <div class="bc-pos-scroll-wrap"><div class="bc-pos-axis ${axisGrad}"><div class="bc-pos-end">亲民<br>低价</div><div class="bc-pos-inner">`;
+      for (const item of pos.axis_items) {
+        const left = Math.round(((item.price_low||0) / maxP) * 80 + 5);
+        const label = item.is_self ? item.name + ' ← 你' : item.name;
+        const priceLabel = `${Math.round((item.price_low||0)/1000)}–${Math.round((item.price_high||0)/1000)}k`;
+        html += `<div class="bc-pos-bub ${item.is_self?'bc-pb-self':'bc-pb-other'}" style="left:${left}%">${_bcEsc(label)}<br>${priceLabel}</div>`;
+      }
+      html += `</div><div class="bc-pos-end">高端<br>高价</div></div></div><div class="bc-pos-hint">← 滑动 →</div></div>`;
+    }
+
+    if (social.length) {
+      html += `<div style="margin-top:16px;"><div class="bc-sec-label-light">社交媒体 — 左右滑动</div><div class="bc-social-scroll">`;
+      for (const s of social) {
+        html += `<div class="bc-social-card"><div class="bc-soc-plat">${_bcEsc(s.platform)}</div><div class="bc-soc-handle">${_bcEsc(s.handle||'待核实')}</div><div class="bc-soc-val">${_bcEsc(s.followers||'—')}</div><div class="bc-soc-note">${_bcEsc(s.note||'')}${s.ai_inferred ? _bcSrc('ai') : ''}</div></div>`;
       }
       html += `</div></div>`;
     }
     html += `</div>`;
 
-    // Summary
-    if (summaryText) {
-      const cleanSummary = inlineMd(summaryText.replace(/^【.+?】/, '').trim());
-      if (cleanSummary) {
-        html += `<div class="brief-summary">💡 ${cleanSummary}</div>`;
+    // 三、竞品分析
+    html += `<div class="bc-card"><div class="bc-section-title">🔍 三、竞品分析</div>`;
+    const allCompItems = [...(comps.head||[]), ...(comps.direct||[]), ...(comps.growth||[])];
+    const selfComp = allCompItems.find(c => c.is_self);
+    const selfAvgGlobal = selfComp ? (selfComp.avg_review_per_store||0) : avgReview;
+
+    function renderCompTierM(tier, label, dotClass) {
+      const items = comps[tier] || [];
+      if (!items.length) return '';
+      let t = `<div class="bc-tier-label"><div class="bc-tier-dot ${dotClass}"></div>${label}</div>`;
+      for (const c of items) {
+        const isSelf = !!c.is_self;
+        const isWarn = !isSelf && !!c.is_warn;
+        const cardCls = isSelf ? 'bc-comp-card self-card' : isWarn ? 'bc-comp-card warn-card' : 'bc-comp-card';
+        const rating = c.rating || 0;
+        const rCls = _bcRatingClass(rating);
+        const isHead = tier === 'head';
+        const thirdLabel = isHead ? 'IG声量' : '单店均评论';
+        const thirdVal = isHead ? _bcEsc(c.ig_followers||'—') : (c.avg_review_per_store != null ? c.avg_review_per_store.toLocaleString() : '—');
+        const thirdSrc = isHead ? 'AI推断' : (isSelf ? '计算值' : '推断');
+        const thirdStyle = (!isHead && isSelf) ? ' style="color:#4338CA;"' : '';
+        t += `<div class="${cardCls}">
+          <div class="bc-comp-top"><div><div class="bc-comp-name${isSelf?'':' other'}">${isSelf ? _bcEsc(c.name)+' ← 你' : _bcEsc(c.name)}</div><div class="bc-comp-sub">${_bcEsc(c.category||'')}${c.founded ? ' · ' + c.founded : ''}</div></div>${rating ? `<span class="bc-rating-badge ${rCls}">${rating.toFixed(1)}</span>` : ''}</div>
+          <div class="bc-comp-stats">
+            <div class="bc-comp-stat"><div class="bc-cs-l">门店数</div><div class="bc-cs-v">${c.store_count != null ? c.store_count+'家' : '—'}</div><div class="bc-cs-src">chains</div></div>
+            <div class="bc-comp-stat"><div class="bc-cs-l">价格带</div><div class="bc-cs-v">${_bcEsc(c.price_band||'—')}</div><div class="bc-cs-src">chains</div></div>
+            <div class="bc-comp-stat"><div class="bc-cs-l">${thirdLabel}</div><div class="bc-cs-v"${thirdStyle}>${thirdVal}</div><div class="bc-cs-src">${thirdSrc}</div></div>
+          </div>`;
+        if (!isSelf && !isHead && c.avg_review_per_store != null && selfAvgGlobal) {
+          const maxV = Math.max(selfAvgGlobal, c.avg_review_per_store) || 1;
+          const selfPct = Math.round(selfAvgGlobal / maxV * 100);
+          const compPct = Math.round(c.avg_review_per_store / maxV * 100);
+          const compFillCls = c.avg_review_per_store > selfAvgGlobal * 2 ? 'bc-rf-top' : isWarn ? 'bc-rf-warn' : 'bc-rf-other';
+          t += `<div class="bc-rc"><div class="bc-rc-label">单店均评论对比 ${_bcSrc('calc')}</div>
+            <div class="bc-rc-row"><div class="bc-rc-name self">你</div><div class="bc-rc-track"><div class="bc-rc-fill bc-rf-self" style="width:${selfPct}%"></div></div><div class="bc-rc-num">${selfAvgGlobal.toLocaleString()}</div></div>
+            <div class="bc-rc-row"><div class="bc-rc-name">${_bcEsc(c.name)}</div><div class="bc-rc-track"><div class="bc-rc-fill ${compFillCls}" style="width:${compPct}%"></div></div><div class="bc-rc-num">${c.avg_review_per_store.toLocaleString()}</div></div>
+          </div>`;
+        }
+        if (c.insight) t += `<div class="bc-comp-insight${isSelf?' bc-ci-self':''}">${_bcEsc(c.insight)}</div>`;
+        t += `</div>`;
       }
+      return t;
     }
+    html += renderCompTierM('head', '头部参照', 'bc-td-head');
+    html += renderCompTierM('direct', '直接竞争', 'bc-td-direct');
+    html += renderCompTierM('growth', '成长型标杆', 'bc-td-growth');
+    html += `</div>`;
 
-    return html;
+    // 四、能力分析
+    html += `<div class="bc-card"><div class="bc-section-title">⚡ 四、能力分析</div>
+      <div class="bc-mtabs">
+        <button class="bc-mtab active" onclick="bcTabModal('${_tabPrefix}-basic',this)">基础能力</button>
+        <button class="bc-mtab" onclick="bcTabModal('${_tabPrefix}-growth',this)">成长能力</button>
+        <button class="bc-mtab" onclick="bcTabModal('${_tabPrefix}-scale',this)">复制能力</button>
+      </div>`;
+    for (const [key] of [['basic'],['growth'],['scale']]) {
+      html += `<div id="${_tabPrefix}-${key}" class="bc-mpanel${key==='basic'?' active':''}">`;
+      for (const row of (ability[key]||[])) {
+        const dotCls = row.level === 'strong' ? 'bc-ad-strong' : row.level === 'mid' ? 'bc-ad-mid' : 'bc-ad-weak';
+        html += `<div class="bc-ability-row"><div class="bc-ability-dot ${dotCls}"></div><div><div class="bc-ability-text">${_bcEsc(row.title)}</div><div class="bc-ability-module">→ 平台模块：${_bcEsc(row.module)}</div></div></div>`;
+      }
+      html += `</div>`;
+    }
+    html += `<div class="bc-divider"></div>
+    <div class="bc-diag">
+      <div class="bc-diag-step"><div class="bc-diag-ico bc-di-b">📊</div><div class="bc-diag-body"><div class="bc-diag-lbl">因为</div><div class="bc-diag-txt">${_bcEsc(diag.because||'')} ${_bcSrc('places')}${_bcSrc('chains')}</div></div></div>
+      <div class="bc-diag-step"><div class="bc-diag-ico bc-di-t">🔎</div><div class="bc-diag-body"><div class="bc-diag-lbl">所以</div><div class="bc-diag-txt">${_bcEsc(diag.therefore||'')} ${_bcSrc('ai')}</div></div></div>
+      <div class="bc-diag-step"><div class="bc-diag-ico bc-di-a">→</div><div class="bc-diag-body"><div class="bc-diag-lbl">建议</div><div class="bc-diag-txt">${_bcEsc(diag.action||'')}</div>
+        <button class="bc-cta-btn" onclick="document.getElementById('kb-modal-overlay').classList.add('hidden')">开始分析单店数据 →</button>
+      </div></div>
+    </div></div>`;
+
+    html += `<div class="bc-legend">
+      <div class="bc-legend-row"><div class="bc-ldot bc-lp"></div>Google Places API · ${sampleSize}家样本 · 实时</div>
+      <div class="bc-legend-row"><div class="bc-ldot bc-lc"></div>chains.json · 行业离线库</div>
+      <div class="bc-legend-row"><div class="bc-ldot bc-lk"></div>计算值 · 基于以上两项推导</div>
+      <div class="bc-legend-row"><div class="bc-ldot bc-ll"></div>AI推断 · 基于公开信息，建议核实</div>
+    </div>`;
+
+    container.innerHTML = html;
   }
 
-  function inlineMd(text) {
-    return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  function bcTabModal(panelId, btn) {
+    const card = btn.closest('.bc-card');
+    card.querySelectorAll('.bc-mpanel').forEach(p => p.classList.remove('active'));
+    card.querySelectorAll('.bc-mtab').forEach(t => t.classList.remove('active'));
+    document.getElementById(panelId).classList.add('active');
+    btn.classList.add('active');
   }
+
 
   function openKBModal(type) {
     const items = type === 'platform' ? _platformKBItems : _merchantKBItems.filter(i => i.source_type === 'upload');
