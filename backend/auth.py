@@ -218,13 +218,27 @@ def logout(response: Response, user: User = Depends(get_current_user), db: Sessi
 
 @router.get("/me")
 def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    import json as _json
     merchant = get_merchant_for_user(user, db)
+    merchant_data = None
+    if merchant:
+        try:
+            meta = _json.loads(merchant.meta_json or "{}")
+        except Exception:
+            meta = {}
+        merchant_data = {
+            "id": merchant.id,
+            "name": merchant.name,
+            "business_type": merchant.business_type,
+            "address": merchant.address,
+            "region": meta.get("region", "id"),
+        }
     return {
         "user_id": user.id,
         "email": user.email,
         "display_name": user.display_name,
         "role": user.role,
-        "merchant": {"id": merchant.id, "name": merchant.name, "business_type": merchant.business_type, "address": merchant.address} if merchant else None,
+        "merchant": merchant_data,
     }
 
 

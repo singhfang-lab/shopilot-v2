@@ -557,7 +557,7 @@ async def run_scenario(sid: str, no_judge: bool = False) -> ScenarioResult:
     email = f"test_{sid.lower()}_{int(time.time())}@test.com"
     password = "Test@12345"
 
-    async with httpx.AsyncClient(timeout=60.0) as c:
+    async with httpx.AsyncClient(timeout=60.0, transport=httpx.AsyncHTTPTransport(retries=2)) as c:
         ok = await register_user(c, email, password)
         if not ok:
             result.error = "注册/登录失败"

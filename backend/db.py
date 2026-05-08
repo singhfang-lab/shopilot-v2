@@ -126,6 +126,53 @@ class SystemPrompt(SQLModel, table=True):
     test_result: str = Field(default="")
 
 
+class BrandProfile(SQLModel, table=True):
+    __tablename__ = "brand_profiles"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    region: str = Field(default="cn")           # "cn" | "id"
+    business_type: str = Field(default="")      # 咖啡/奶茶/快餐/火锅/烘焙/正餐/便利
+    founded_year: Optional[int] = Field(default=None)
+    store_count: Optional[int] = Field(default=None)
+    store_count_year: Optional[int] = Field(default=None)
+    headquarters: str = Field(default="")
+    revenue: Optional[float] = Field(default=None)       # 亿人民币
+    revenue_year: Optional[int] = Field(default=None)
+    avg_price_min: Optional[float] = Field(default=None)
+    avg_price_max: Optional[float] = Field(default=None)
+    price_band: str = Field(default="")                  # 原始价格带字符串，如 "¥15-35"
+    avg_price_amap: Optional[float] = Field(default=None)
+    avg_rating_amap: Optional[float] = Field(default=None)
+    delivery_rate: Optional[float] = Field(default=None)
+    amap_sample_size: Optional[int] = Field(default=None)
+    price_tier: str = Field(default="")                  # 低价/中价/高价
+    quality_perception: str = Field(default="")          # 低/中/高
+    main_competitors: str = Field(default="[]")          # JSON 数组
+    user_tags: str = Field(default="[]")                 # JSON 数组
+    description: str = Field(default="")
+    aliases: str = Field(default="[]")                   # JSON 数组，别名
+    markets: str = Field(default="[]")                   # JSON 数组，进入市场
+    expansion: str = Field(default="")                   # 扩张状态描述
+    instagram: str = Field(default="")
+    profile_json: str = Field(default="")                # 预生成轻量级画像 JSON（onboarding 用）
+    data_sources: str = Field(default="{}")              # JSON，记录字段来源
+    is_active: bool = Field(default=True)                # 上线/下线控制
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class BrandReport(SQLModel, table=True):
+    __tablename__ = "brand_reports"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    brand_id: int = Field(foreign_key="brand_profiles.id", index=True)
+    report_json: str                             # 完整10模块 JSON
+    prompt_template: str = Field(default="")    # 生成时使用的 prompt 模板快照
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    model_used: str = Field(default="")
+
+
 class RefreshToken(SQLModel, table=True):
     __tablename__ = "refresh_tokens"
 

@@ -902,7 +902,7 @@ async def upload(
     async def _index_bg():
         try:
             merged, _ = merge_reports([save_path])
-            if merged:
+            if merged and _sid:  # _sid must be set — never write to platform KB
                 if rag._use_pgvector():
                     await rag._pg_delete_by_source_async(save_path.name, _sid)
                     chunks = _build_rag_chunks(merged, save_path.name)

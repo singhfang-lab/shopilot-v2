@@ -4,6 +4,8 @@ import asyncio
 import json
 import os
 import secrets
+import threading
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -221,6 +223,83 @@ async def delete_platform_kb(
     return {"ok": True, "chunks_removed": deleted}
 
 
+class RenamePlatformKBRequest(BaseModel):
+    new_name: str  # just the filename part, no path
+
+
+@router.patch("/platform-kb/{doc_id}/rename")
+async def rename_platform_kb(
+    doc_id: int,
+    req: RenamePlatformKBRequest,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    doc = db.get(PlatformKBDocument, doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Not found")
+    # Keep the folder prefix, replace only the filename part
+    parts = doc.original_name.rsplit("/", 1)
+    if len(parts) == 2:
+        doc.original_name = f"{parts[0]}/{req.new_name}"
+    else:
+        doc.original_name = req.new_name
+    db.add(doc)
+    db.commit()
+    return {"ok": True, "original_name": doc.original_name}
+
+
+class RenameFolderRequest(BaseModel):
+    old_prefix: str   # e.g. "新建文件夹/07_营销活动与增长"
+    new_prefix: str   # e.g. "新建文件夹/07_营销推广与增长"
+
+
+@router.post("/platform-kb/rename-folder")
+async def rename_folder_platform_kb(
+    req: RenameFolderRequest,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    docs = db.exec(select(PlatformKBDocument)).all()
+    updated = 0
+    for doc in docs:
+        if doc.original_name.startswith(req.old_prefix + "/") or doc.original_name == req.old_prefix:
+            doc.original_name = req.new_prefix + doc.original_name[len(req.old_prefix):]
+            db.add(doc)
+            updated += 1
+    db.commit()
+    return {"ok": True, "updated": updated}
+
+
+class DeleteFolderRequest(BaseModel):
+    prefix: str   # e.g. "新建文件夹/07_营销活动与增长"
+
+
+@router.delete("/platform-kb-folder")
+async def delete_folder_platform_kb(
+    req: DeleteFolderRequest,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    docs = db.exec(select(PlatformKBDocument)).all()
+    to_delete = [
+        d for d in docs
+        if d.original_name.startswith(req.prefix + "/") or d.original_name == req.prefix
+    ]
+    total_chunks = 0
+    for doc in to_delete:
+        if rag._use_pgvector():
+            deleted = await rag._pg_delete_by_source_async(doc.filename, shop_id=None)
+        else:
+            deleted = rag.delete_by_source(doc.filename, shop_id=None)
+        total_chunks += deleted or 0
+        path = PLATFORM_UPLOADS_DIR / doc.filename
+        if path.exists():
+            path.unlink()
+        db.delete(doc)
+    db.commit()
+    return {"ok": True, "files_deleted": len(to_delete), "chunks_removed": total_chunks}
+
+
 # ── Prompt management ─────────────────────────────────────────────────────────
 
 @router.get("/prompts")
@@ -357,6 +436,8 @@ async def ai_suggest_prompt(
 
 class TestPromptRequest(BaseModel):
     test_message: str
+    provider: str = "claude"
+    model: str = ""
 
 
 @router.post("/prompts/{prompt_id}/test")
@@ -370,27 +451,82 @@ async def test_prompt(
     if not p:
         raise HTTPException(status_code=404, detail="Not found")
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        raise HTTPException(status_code=503, detail="Anthropic API key not configured")
+    # Look up the llm_config for the requested provider
+    cfg = db.exec(
+        select(LLMConfig).where(LLMConfig.provider == req.provider)
+    ).first()
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        res = await client.post(
-            f"{CLAUDE_API_BASE}/messages",
-            json={"model": CLAUDE_MODEL, "max_tokens": 800, "temperature": 0.5,
-                  "system": p.content,
-                  "messages": [{"role": "user", "content": req.test_message}]},
-            headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
-        )
-    if res.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"Claude error {res.status_code}")
+    provider = req.provider
+    model = req.model or (cfg.model if cfg else CLAUDE_MODEL)
+    api_key = (cfg.api_key if cfg and cfg.api_key else None)
 
-    reply = res.json()["content"][0]["text"]
-    p.test_result = json.dumps({"message": req.test_message, "reply": reply}, ensure_ascii=False)
+    if provider == "claude":
+        api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            raise HTTPException(status_code=503, detail="Anthropic API key not configured")
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            res = await client.post(
+                f"{CLAUDE_API_BASE}/messages",
+                json={"model": model, "max_tokens": 800, "system": p.content,
+                      "messages": [{"role": "user", "content": req.test_message}]},
+                headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
+            )
+        if res.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"Claude error {res.status_code}: {res.text[:200]}")
+        reply = res.json()["content"][0]["text"]
+
+    elif provider == "openai":
+        api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+        if not api_key:
+            raise HTTPException(status_code=503, detail="OpenAI API key not configured")
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            res = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                json={"model": model, "max_tokens": 800,
+                      "messages": [{"role": "system", "content": p.content},
+                                   {"role": "user", "content": req.test_message}]},
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+        if res.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"OpenAI error {res.status_code}: {res.text[:200]}")
+        reply = res.json()["choices"][0]["message"]["content"]
+
+    elif provider == "gemini":
+        api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
+        if not api_key:
+            raise HTTPException(status_code=503, detail="Gemini API key not configured")
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            res = await client.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}",
+                json={"system_instruction": {"parts": [{"text": p.content}]},
+                      "contents": [{"parts": [{"text": req.test_message}]}]},
+            )
+        if res.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"Gemini error {res.status_code}: {res.text[:200]}")
+        reply = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+
+    elif provider == "ollama":
+        base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            res = await client.post(
+                f"{base}/api/chat",
+                json={"model": model, "stream": False,
+                      "messages": [{"role": "system", "content": p.content},
+                                   {"role": "user", "content": req.test_message}]},
+            )
+        if res.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"Ollama error {res.status_code}: {res.text[:200]}")
+        reply = res.json()["message"]["content"]
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported provider: {provider}")
+
+    p.test_result = json.dumps({"message": req.test_message, "reply": reply,
+                                "provider": provider, "model": model}, ensure_ascii=False)
     p.status = "testing"
     db.add(p)
     db.commit()
-    return {"reply": reply}
+    return {"reply": reply, "provider": provider, "model": model}
 
 
 @router.post("/prompts/{prompt_id}/publish")
@@ -506,3 +642,144 @@ def delete_llm_config(
     db.delete(cfg)
     db.commit()
     return {"ok": True}
+
+
+# ── Scenario Testing ──────────────────────────────────────────────────────────
+
+# In-memory task store: task_id → {status, progress, results, html, error}
+_test_tasks: dict[str, dict] = {}
+
+
+@router.get("/test-scenarios/list")
+def list_test_scenarios(admin=Depends(require_admin)):
+    from .test_scenarios import SCENE_META
+    return [
+        {"id": sid, "name": m["name"], "business_type": m["business_type"]}
+        for sid, m in SCENE_META.items()
+    ]
+
+
+class RunScenariosRequest(BaseModel):
+    cases: list[str] = []
+    no_judge: bool = False
+
+
+@router.post("/test-scenarios/run")
+def run_test_scenarios(req: RunScenariosRequest, admin=Depends(require_admin)):
+    from .test_scenarios import SCENE_META, run_scenario, build_html_report
+
+    all_ids = list(SCENE_META.keys())
+    run_ids = [c.upper() for c in req.cases if c.upper() in all_ids] or all_ids
+
+    task_id = uuid.uuid4().hex
+    _test_tasks[task_id] = {
+        "status": "running",
+        "progress": {"done": 0, "total": len(run_ids)},
+        "results": [],
+        "html": None,
+        "error": None,
+    }
+
+    CONCURRENCY = 5  # 最多同时跑 5 个场景
+
+    def _worker():
+        import time
+        from .test_scenarios import ScenarioResult
+        results_map: dict[str, object] = {}
+        t0 = time.time()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        async def _run_one(sid: str):
+            try:
+                r = await run_scenario(sid, no_judge=req.no_judge)
+            except Exception as e:
+                r = ScenarioResult(
+                    sid=sid,
+                    name=SCENE_META[sid]["name"],
+                    business_type=SCENE_META[sid]["business_type"],
+                    error=str(e),
+                )
+            results_map[sid] = r
+            _test_tasks[task_id]["progress"]["done"] = len(results_map)
+            # preserve original order for results
+            ordered = [results_map[s] for s in run_ids if s in results_map]
+            _test_tasks[task_id]["results"] = _serialise_results(ordered)
+
+        async def _run_all():
+            sem = asyncio.Semaphore(CONCURRENCY)
+            async def _guarded(sid):
+                async with sem:
+                    await _run_one(sid)
+            await asyncio.gather(*[_guarded(sid) for sid in run_ids])
+
+        try:
+            loop.run_until_complete(_run_all())
+            ordered = [results_map[s] for s in run_ids if s in results_map]
+            total_ms = int((time.time() - t0) * 1000)
+            html = build_html_report(ordered, total_ms)
+            _test_tasks[task_id]["status"] = "done"
+            _test_tasks[task_id]["html"] = html
+            _test_tasks[task_id]["results"] = _serialise_results(ordered)
+        except Exception as e:
+            _test_tasks[task_id]["status"] = "error"
+            _test_tasks[task_id]["error"] = str(e)
+        finally:
+            loop.close()
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {"task_id": task_id, "total": len(run_ids)}
+
+
+def _serialise_results(results) -> list[dict]:
+    out = []
+    for sc in results:
+        turns = []
+        for t in sc.turns:
+            s = t.score
+            turns.append({
+                "turn_no": t.turn_no,
+                "user_msg": t.user_msg,
+                "ai_response": t.ai_response,
+                "has_card": t.has_card,
+                "has_chart": t.has_chart,
+                "has_tool_call": t.has_tool_call,
+                "chars": t.chars,
+                "latency_ms": t.latency_ms,
+                "score": {
+                    "overall": s.overall,
+                    "accuracy": s.accuracy,
+                    "actionability": s.actionability,
+                    "completeness": s.completeness,
+                    "clarity": s.clarity,
+                    "relevance": s.relevance,
+                    "data_usage": s.data_usage,
+                    "strengths": s.strengths,
+                    "weaknesses": s.weaknesses,
+                    "red_flags": s.red_flags,
+                    "summary": s.summary,
+                    "error": s.error,
+                },
+            })
+        sc_scores = [t.score.overall for t in sc.turns if t.score and not t.score.error and t.score.overall > 0]
+        avg = round(sum(sc_scores) / len(sc_scores), 2) if sc_scores else 0
+        out.append({
+            "sid": sc.sid,
+            "name": sc.name,
+            "business_type": sc.business_type,
+            "error": sc.error,
+            "avg_score": avg,
+            "red_flag_hits": sc.red_flag_hits,
+            "must_hit": sc.must_hit,
+            "must_hit_pass": sc.must_hit_pass,
+            "turns": turns,
+        })
+    return out
+
+
+@router.get("/test-scenarios/result/{task_id}")
+def get_test_result(task_id: str, admin=Depends(require_admin)):
+    task = _test_tasks.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task

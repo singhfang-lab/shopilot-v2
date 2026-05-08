@@ -128,6 +128,39 @@
     /* ── Empty state ── */
     .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
 
+    /* ── KB file tree ── */
+    .kb-row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.1s; position: relative; }
+    .kb-row:hover { background: var(--surface); }
+    .kb-row:hover .kb-actions { opacity: 1; }
+    .kb-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+    .kb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kb-name-input { flex: 1; padding: 2px 6px; border: 1.5px solid var(--accent); border-radius: 4px; font-size: 13px; font-family: inherit; outline: none; }
+    .kb-meta { font-size: 11px; color: var(--text-muted); white-space: nowrap; margin-right: 8px; }
+    .kb-actions { opacity: 0; display: flex; gap: 4px; flex-shrink: 0; transition: opacity 0.15s; }
+    .kb-actions button { padding: 3px 8px; font-size: 11px; border-radius: 5px; border: 1px solid var(--border); background: var(--card); color: var(--text-muted); cursor: pointer; font-family: inherit; }
+    .kb-actions button:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
+    .kb-actions button.danger:hover { background: #fee2e2; color: var(--red); border-color: var(--red); }
+    .kb-indent { padding-left: 28px; }
+    .kb-chevron { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; width: 12px; flex-shrink: 0; }
+    .kb-chevron.open { transform: rotate(90deg); }
+    .kb-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── KB grid ── */
+    .kb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; padding: 16px; }
+    .kb-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px 12px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.15s; position: relative; }
+    .kb-card:hover { border-color: var(--accent); background: #f0f6ff; }
+    .kb-card:hover .kb-card-actions { opacity: 1; }
+    .kb-card-icon { font-size: 36px; line-height: 1; }
+    .kb-card-name { font-size: 11px; text-align: center; word-break: break-all; color: var(--text); line-height: 1.4; max-height: 32px; overflow: hidden; }
+    .kb-card-actions { position: absolute; top: 4px; right: 4px; opacity: 0; display: flex; gap: 2px; transition: opacity 0.15s; }
+    .kb-card-actions button { padding: 2px 5px; font-size: 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--card); color: var(--text-muted); cursor: pointer; }
+    .kb-card-actions button:hover { background: #fee2e2; color: var(--red); border-color: var(--red); }
+
+    /* ── Breadcrumb ── */
+    .kb-bc-item { color: var(--accent); cursor: pointer; }
+    .kb-bc-item:hover { text-decoration: underline; }
+    .kb-bc-sep { color: var(--text-muted); }
+
     /* ── Toast ── */
     #toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
     #toast.show { opacity: 1; }
@@ -162,6 +195,9 @@
       </div>
       <div class="nav-item" data-tab="llm">
         <span class="nav-item-icon">🤖</span> 模型配置
+      </div>
+      <div class="nav-item" data-tab="scenarios">
+        <span class="nav-item-icon">🧪</span> 场景测试
       </div>
     </div>
     <div id="nav-footer">
@@ -207,38 +243,45 @@
 
     <!-- Platform KB -->
     <div class="tab-panel" id="tab-platform-kb">
-      <div class="page-header">
-        <div class="page-title">平台知识库</div>
-        <div class="page-sub">上传后自动索引，所有用户可用</div>
-      </div>
-
-      <div class="card" style="margin-bottom:20px;">
-        <div class="card-header"><div class="card-header-title">上传文件</div></div>
-        <div style="padding:20px;">
-          <div class="upload-zone" id="upload-zone">
-            <div class="upload-zone-icon">📄</div>
-            <div class="upload-zone-text">拖拽文件或文件夹到此处</div>
-            <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
-              <button class="btn btn-primary btn-sm" onclick="document.getElementById('file-input').click()">选择文件</button>
-              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('folder-input').click()">选择文件夹</button>
-            </div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">支持 TXT、MD、PDF</div>
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <div class="page-title">平台知识库</div>
+          <div class="page-sub">上传后自动索引，所有用户可用</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+          <span id="kb-stats" style="font-size:12px;color:var(--text-muted);"></span>
+          <button class="btn btn-ghost btn-sm" onclick="loadPlatformKB()" title="刷新">↻</button>
+          <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+            <button id="kb-view-list" class="btn btn-sm" style="border-radius:0;border:none;background:var(--surface);color:var(--text-muted);padding:5px 10px;" onclick="setKBView('list')" title="列表视图">☰</button>
+            <button id="kb-view-grid" class="btn btn-sm" style="border-radius:0;border:none;background:var(--accent);color:#fff;padding:5px 10px;" onclick="setKBView('grid')" title="宫格视图">⊞</button>
           </div>
-          <input type="file" id="file-input" accept=".txt,.md,.pdf" style="display:none" multiple />
-          <input type="file" id="folder-input" accept=".txt,.md,.pdf" style="display:none" multiple webkitdirectory />
-          <div id="upload-status" style="margin-top:12px;font-size:13px;color:var(--text-muted);"></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-title">已上传文件</div>
-          <button class="btn btn-ghost btn-sm" onclick="loadPlatformKB()">刷新</button>
+      <!-- Upload zone -->
+      <div class="card" style="margin-bottom:16px;">
+        <div style="padding:16px 20px;">
+          <div class="upload-zone" id="upload-zone" style="padding:20px;">
+            <div class="upload-zone-icon" style="font-size:24px;margin-bottom:6px;">📁</div>
+            <div class="upload-zone-text">拖拽文件夹到此处，或点击选择文件夹上传</div>
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary btn-sm" onclick="document.getElementById('folder-input').click()">选择文件夹</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">支持 TXT、MD、PDF · 自动保留文件夹目录结构</div>
+          </div>
+          <input type="file" id="folder-input" accept=".txt,.md,.pdf" style="display:none" multiple webkitdirectory />
+          <div id="upload-status" style="margin-top:10px;font-size:13px;color:var(--text-muted);min-height:20px;"></div>
         </div>
-        <table>
-          <thead><tr><th>文件名</th><th>状态</th><th>Chunks</th><th>上传时间</th><th>操作</th></tr></thead>
-          <tbody id="platform-kb-tbody"><tr><td colspan="5" class="empty">加载中...</td></tr></tbody>
-        </table>
+      </div>
+
+      <!-- Breadcrumb -->
+      <div id="kb-breadcrumb" style="display:flex;align-items:center;gap:4px;font-size:13px;margin-bottom:12px;flex-wrap:wrap;"></div>
+
+      <!-- File tree / grid -->
+      <div class="card">
+        <div id="kb-file-view" style="padding:8px 4px;min-height:120px;">
+          <div class="empty">加载中...</div>
+        </div>
       </div>
     </div>
 
@@ -291,10 +334,18 @@
             </div>
 
             <div id="test-area" style="display:none;margin-top:16px;">
-              <div class="field-label">测试消息</div>
-              <div style="display:flex;gap:8px;margin-bottom:8px;">
-                <input type="text" id="test-message-input" placeholder="输入一条测试消息..." />
-                <button class="btn btn-primary" onclick="runTest()">发送</button>
+              <div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-end;">
+                <div style="flex:1;">
+                  <div class="field-label">测试消息</div>
+                  <input type="text" id="test-message-input" placeholder="输入一条测试消息..." />
+                </div>
+                <div style="width:200px;">
+                  <div class="field-label">测试模型</div>
+                  <select id="test-model-select" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:var(--surface);color:var(--text);cursor:pointer;">
+                    <option value="">加载中...</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary" onclick="runTest()" style="flex-shrink:0;">发送</button>
               </div>
               <div id="test-result-area"></div>
             </div>
@@ -332,6 +383,74 @@
             <th>提供商</th><th>模型</th><th>标签</th><th>API Key</th><th>前端可见</th><th>操作</th>
           </tr></thead>
           <tbody id="llm-tbody"><tr><td colspan="6" class="empty">加载中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Scenario Testing -->
+    <div class="tab-panel" id="tab-scenarios">
+      <div class="page-header">
+        <div class="page-title">场景测试</div>
+        <div class="page-sub">对 20 个真实商家场景进行 3 轮对话测试，Claude Judge 6 维度评分</div>
+      </div>
+
+      <!-- Config card -->
+      <div class="card" style="margin-bottom:20px;" id="scenario-config-card">
+        <div class="card-header">
+          <div class="card-header-title">选择场景</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="judge-toggle" checked style="width:14px;height:14px;" />
+              Claude Judge 评分
+            </label>
+            <button class="btn btn-ghost btn-sm" onclick="scenarioSelectAll(true)">全选</button>
+            <button class="btn btn-ghost btn-sm" onclick="scenarioSelectAll(false)">取消全选</button>
+          </div>
+        </div>
+        <div id="scenario-checklist" style="padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:6px;">
+          <div style="color:var(--text-muted);font-size:13px;">加载中...</div>
+        </div>
+        <div style="padding:0 20px 16px;display:flex;align-items:center;gap:12px;">
+          <button class="btn btn-primary" id="run-scenarios-btn" onclick="runScenarios()">▶ 开始测试</button>
+          <div id="scenario-run-status" style="font-size:13px;color:var(--text-muted);"></div>
+        </div>
+      </div>
+
+      <!-- Progress bar (hidden until running) -->
+      <div id="scenario-progress-wrap" style="display:none;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:14px;font-weight:600;" id="scenario-progress-label">准备中...</span>
+          <span id="scenario-progress-pct" style="font-size:13px;color:var(--text-muted);font-weight:600;"></span>
+        </div>
+        <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:8px;">
+          <div id="scenario-progress-bar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.4s;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">
+          <span id="scenario-time-elapsed"></span>
+          <span id="scenario-time-remaining"></span>
+        </div>
+      </div>
+
+      <!-- Results table (hidden until first result) -->
+      <div class="card" id="scenario-results-card" style="display:none;">
+        <div class="card-header">
+          <div class="card-header-title">测试结果</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div id="scenario-summary-badges" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+            <button class="btn btn-ghost btn-sm" id="download-html-btn" style="display:none;" onclick="downloadReport()">⬇ 下载报告</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th style="width:60px;">场景</th>
+            <th>名称</th>
+            <th>业务类型</th>
+            <th style="width:90px;text-align:center;">Judge 均分</th>
+            <th style="width:70px;text-align:center;">红旗</th>
+            <th style="width:70px;text-align:center;">状态</th>
+            <th style="width:60px;text-align:center;">详情</th>
+          </tr></thead>
+          <tbody id="scenario-results-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -413,9 +532,10 @@
       document.getElementById(`tab-${tab}`).classList.add('active');
       if (tab === 'users') loadUsers();
       else if (tab === 'platform-kb') loadPlatformKB();
-      else if (tab === 'prompts') loadPrompts();
+      else if (tab === 'prompts') { loadPrompts(); loadLLMConfigs(); }
       else if (tab === 'stats') loadStats();
       else if (tab === 'llm') loadLLMConfigs();
+      else if (tab === 'scenarios') loadScenarioList();
     });
   });
 
@@ -485,28 +605,299 @@
   }
 
   // ── Platform KB ────────────────────────────────────────────────────────────
+  let _kbDocs = [];
+  let _kbView = 'grid';       // 'list' | 'grid'
+  let _kbPath = [];           // current folder path segments, e.g. ['新建文件夹', '07_营销活动与增长']
+  let _kbExpanded = {};       // folder path → bool
+  let _kbPollTimer = null;
+
+  function setKBView(v) {
+    _kbView = v;
+    document.getElementById('kb-view-list').style.background = v === 'list' ? 'var(--accent)' : 'var(--surface)';
+    document.getElementById('kb-view-list').style.color    = v === 'list' ? '#fff' : 'var(--text-muted)';
+    document.getElementById('kb-view-grid').style.background = v === 'grid' ? 'var(--accent)' : 'var(--surface)';
+    document.getElementById('kb-view-grid').style.color    = v === 'grid' ? '#fff' : 'var(--text-muted)';
+    _renderKB();
+  }
+
   async function loadPlatformKB() {
-    const tbody = document.getElementById('platform-kb-tbody');
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">加载中...</td></tr>';
     const res = await fetch(`${API}/admin/platform-kb`, { credentials: 'include' });
     if (!res.ok) return;
-    const docs = await res.json();
-    if (!docs.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无文件</td></tr>'; return; }
-    tbody.innerHTML = docs.map(d => {
-      const dotClass = d.status === 'indexed' ? 'dot-green' : d.status === 'processing' ? 'dot-orange' : 'dot-red';
-      const statusLabel = d.status === 'indexed' ? '已索引' : d.status === 'processing' ? '处理中' : '失败';
-      return `<tr>
-        <td>${d.original_name}</td>
-        <td><span class="status-dot ${dotClass}"></span>${statusLabel}</td>
-        <td>${d.chunk_count}</td>
-        <td>${d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString('zh-CN') : '—'}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deletePlatformKB(${d.id}, '${d.original_name}')">删除</button></td>
-      </tr>`;
+    _kbDocs = await res.json();
+    _renderKB();
+    _renderKBStats();
+  }
+
+  function _renderKBStats() {
+    const total = _kbDocs.length;
+    const indexed = _kbDocs.filter(d => d.status === 'indexed').length;
+    const processing = _kbDocs.filter(d => d.status === 'processing').length;
+    const chunks = _kbDocs.reduce((a, d) => a + (d.chunk_count || 0), 0);
+    document.getElementById('kb-stats').textContent =
+      `${total} 个文件 · ${chunks} chunks${processing ? ' · ' + processing + ' 个索引中' : ''}`;
+  }
+
+  // Build a nested tree from flat docs scoped to current path
+  function _buildTree(docs, pathPrefix) {
+    const folders = {};
+    const files = [];
+    for (const doc of docs) {
+      const name = doc.original_name;
+      const rel = pathPrefix ? name.slice(pathPrefix.length + 1) : name;
+      const slash = rel.indexOf('/');
+      if (slash === -1) {
+        files.push(doc);
+      } else {
+        const folder = rel.slice(0, slash);
+        if (!folders[folder]) folders[folder] = [];
+        folders[folder].push(doc);
+      }
+    }
+    return { folders, files };
+  }
+
+  function _docsUnder(prefix) {
+    return _kbDocs.filter(d =>
+      prefix === ''
+        ? true
+        : d.original_name.startsWith(prefix + '/') || d.original_name === prefix
+    );
+  }
+
+  function _renderKB() {
+    const container = document.getElementById('kb-file-view');
+    const prefix = _kbPath.join('/');
+    const scoped = _docsUnder(prefix);
+    const { folders, files } = _buildTree(scoped, prefix);
+
+    _renderBreadcrumb();
+
+    if (!Object.keys(folders).length && !files.length) {
+      container.innerHTML = '<div class="empty">暂无文件</div>';
+      return;
+    }
+
+    if (_kbView === 'grid') {
+      _renderGrid(container, folders, files, prefix);
+    } else {
+      _renderList(container, folders, files, prefix);
+    }
+  }
+
+  function _renderBreadcrumb() {
+    const el = document.getElementById('kb-breadcrumb');
+    const parts = [{ label: '全部文件', path: [] }, ..._kbPath.map((seg, i) => ({ label: seg, path: _kbPath.slice(0, i + 1) }))];
+    el.innerHTML = parts.map((p, i) => {
+      const isLast = i === parts.length - 1;
+      return isLast
+        ? `<span style="color:var(--text);font-weight:600;">${_esc(p.label)}</span>`
+        : `<span class="kb-bc-item" onclick="kbNavTo(${JSON.stringify(p.path)})">${_esc(p.label)}</span><span class="kb-bc-sep"> / </span>`;
     }).join('');
   }
 
+  function kbNavTo(pathArr) {
+    _kbPath = pathArr;
+    _renderKB();
+  }
+
+  function _statusDot(status) {
+    const color = status === 'indexed' ? 'var(--green)' : status === 'processing' ? 'var(--orange)' : 'var(--red)';
+    return `<span class="kb-status-dot" style="background:${color};" title="${status}"></span>`;
+  }
+
+  // ── List view ────────────────────────────────────────────────────────────────
+  function _renderList(container, folders, files, prefix) {
+    let html = '<div style="padding:4px 8px;">';
+
+    for (const [fname, fdocs] of Object.entries(folders).sort()) {
+      const fullPath = prefix ? `${prefix}/${fname}` : fname;
+      const isOpen = _kbExpanded[fullPath];
+      const fileCount = fdocs.length;
+      html += `
+        <div class="kb-row" onclick="kbToggleFolder('${_esc(fullPath)}')">
+          <span class="kb-chevron ${isOpen ? 'open' : ''}">▶</span>
+          <span class="kb-icon">📁</span>
+          <span class="kb-name" id="kbfn-${_esc(fullPath)}">${_esc(fname)}</span>
+          <span class="kb-meta">${fileCount} 个文件</span>
+          <div class="kb-actions" onclick="event.stopPropagation()">
+            <button onclick="kbRenameFolder('${_esc(fullPath)}', '${_esc(fname)}')">改名</button>
+            <button class="danger" onclick="kbDeleteFolder('${_esc(fullPath)}', '${_esc(fname)}')">删除</button>
+          </div>
+        </div>`;
+      if (isOpen) {
+        const sub = _buildTree(fdocs, fullPath);
+        html += `<div class="kb-indent">${_renderListInner(sub.folders, sub.files, fullPath)}</div>`;
+      }
+    }
+
+    for (const doc of files.sort((a, b) => a.original_name.localeCompare(b.original_name))) {
+      const fname = doc.original_name.split('/').pop();
+      html += `
+        <div class="kb-row">
+          <span style="width:12px;flex-shrink:0;"></span>
+          <span class="kb-icon">📄</span>
+          <span class="kb-name">${_esc(fname)}</span>
+          ${_statusDot(doc.status)}
+          <span class="kb-meta">${doc.chunk_count} chunks</span>
+          <div class="kb-actions" onclick="event.stopPropagation()">
+            <button onclick="kbRenameFile(${doc.id}, '${_esc(fname)}')">改名</button>
+            <button class="danger" onclick="kbDeleteFile(${doc.id}, '${_esc(fname)}')">删除</button>
+          </div>
+        </div>`;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function _renderListInner(folders, files, prefix) {
+    let html = '';
+    for (const [fname, fdocs] of Object.entries(folders).sort()) {
+      const fullPath = prefix ? `${prefix}/${fname}` : fname;
+      const isOpen = _kbExpanded[fullPath];
+      html += `
+        <div class="kb-row" onclick="kbToggleFolder('${_esc(fullPath)}')">
+          <span class="kb-chevron ${isOpen ? 'open' : ''}">▶</span>
+          <span class="kb-icon">📁</span>
+          <span class="kb-name">${_esc(fname)}</span>
+          <span class="kb-meta">${fdocs.length} 个文件</span>
+          <div class="kb-actions" onclick="event.stopPropagation()">
+            <button onclick="kbRenameFolder('${_esc(fullPath)}', '${_esc(fname)}')">改名</button>
+            <button class="danger" onclick="kbDeleteFolder('${_esc(fullPath)}', '${_esc(fname)}')">删除</button>
+          </div>
+        </div>`;
+      if (isOpen) {
+        const sub = _buildTree(fdocs, fullPath);
+        html += `<div class="kb-indent">${_renderListInner(sub.folders, sub.files, fullPath)}</div>`;
+      }
+    }
+    for (const doc of files.sort((a, b) => a.original_name.localeCompare(b.original_name))) {
+      const fname = doc.original_name.split('/').pop();
+      html += `
+        <div class="kb-row">
+          <span style="width:12px;flex-shrink:0;"></span>
+          <span class="kb-icon">📄</span>
+          <span class="kb-name">${_esc(fname)}</span>
+          ${_statusDot(doc.status)}
+          <span class="kb-meta">${doc.chunk_count} chunks</span>
+          <div class="kb-actions" onclick="event.stopPropagation()">
+            <button onclick="kbRenameFile(${doc.id}, '${_esc(fname)}')">改名</button>
+            <button class="danger" onclick="kbDeleteFile(${doc.id}, '${_esc(fname)}')">删除</button>
+          </div>
+        </div>`;
+    }
+    return html;
+  }
+
+  // ── Grid view ────────────────────────────────────────────────────────────────
+  function _renderGrid(container, folders, files, prefix) {
+    let html = '<div class="kb-grid">';
+    for (const [fname, fdocs] of Object.entries(folders).sort()) {
+      const fullPath = prefix ? `${prefix}/${fname}` : fname;
+      const newPath = JSON.stringify([..._kbPath, fname]).replace(/'/g, '&#39;');
+      html += `
+        <div class="kb-card kb-folder-card" data-path='${newPath}'>
+          <div class="kb-card-actions" onclick="event.stopPropagation()">
+            <button onclick="kbRenameFolder('${_esc(fullPath)}', '${_esc(fname)}');event.stopPropagation()">✏</button>
+            <button onclick="kbDeleteFolder('${_esc(fullPath)}', '${_esc(fname)}');event.stopPropagation()">✕</button>
+          </div>
+          <div class="kb-card-icon">📁</div>
+          <div class="kb-card-name" title="${_esc(fname)}">${_esc(fname)}</div>
+          <div style="font-size:10px;color:var(--text-muted);">${fdocs.length} 个文件</div>
+        </div>`;
+    }
+    for (const doc of files.sort((a, b) => a.original_name.localeCompare(b.original_name))) {
+      const fname = doc.original_name.split('/').pop();
+      const ext = fname.split('.').pop().toLowerCase();
+      const icon = ext === 'pdf' ? '📕' : ext === 'md' ? '📝' : '📄';
+      html += `
+        <div class="kb-card">
+          <div class="kb-card-actions" onclick="event.stopPropagation()">
+            <button onclick="kbRenameFile(${doc.id}, '${_esc(fname)}')">✏</button>
+            <button onclick="kbDeleteFile(${doc.id}, '${_esc(fname)}')">✕</button>
+          </div>
+          <div class="kb-card-icon">${icon}</div>
+          <div class="kb-card-name" title="${_esc(fname)}">${_esc(fname)}</div>
+          <div style="font-size:10px;color:var(--text-muted);">${doc.chunk_count} chunks ${_statusDot(doc.status)}</div>
+        </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+    // event delegation for folder cards (avoids onclick attribute quote issues)
+    container.querySelectorAll('.kb-folder-card').forEach(el => {
+      el.addEventListener('click', () => {
+        const path = JSON.parse(el.dataset.path);
+        kbNavTo(path);
+      });
+    });
+  }
+
+  // ── Folder toggle ─────────────────────────────────────────────────────────
+  function kbToggleFolder(fullPath) {
+    _kbExpanded[fullPath] = !_kbExpanded[fullPath];
+    _renderKB();
+  }
+
+  // ── Rename file ───────────────────────────────────────────────────────────
+  async function kbRenameFile(id, currentName) {
+    const newName = prompt('重命名文件：', currentName);
+    if (!newName || newName === currentName) return;
+    const res = await fetch(`${API}/admin/platform-kb/${id}/rename`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_name: newName }),
+    });
+    if (!res.ok) { toast('改名失败'); return; }
+    toast('已改名');
+    await loadPlatformKB();
+  }
+
+  // ── Rename folder ─────────────────────────────────────────────────────────
+  async function kbRenameFolder(fullPath, currentName) {
+    const newName = prompt('重命名文件夹：', currentName);
+    if (!newName || newName === currentName) return;
+    const parentPath = fullPath.includes('/') ? fullPath.slice(0, fullPath.lastIndexOf('/')) : '';
+    const newPrefix = parentPath ? `${parentPath}/${newName}` : newName;
+    const res = await fetch(`${API}/admin/platform-kb/rename-folder`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_prefix: fullPath, new_prefix: newPrefix }),
+    });
+    if (!res.ok) { toast('改名失败'); return; }
+    const d = await res.json();
+    toast(`已改名，${d.updated} 个文件更新`);
+    // update expanded state key
+    if (_kbExpanded[fullPath]) { _kbExpanded[newPrefix] = true; delete _kbExpanded[fullPath]; }
+    await loadPlatformKB();
+  }
+
+  // ── Delete file ───────────────────────────────────────────────────────────
+  async function kbDeleteFile(id, name) {
+    if (!confirm(`删除「${name}」？此操作不可撤销。`)) return;
+    const res = await fetch(`${API}/admin/platform-kb/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (!res.ok) { toast('删除失败'); return; }
+    toast('已删除');
+    await loadPlatformKB();
+  }
+
+  // ── Delete folder ─────────────────────────────────────────────────────────
+  async function kbDeleteFolder(fullPath, name) {
+    const count = _docsUnder(fullPath).length;
+    if (!confirm(`删除文件夹「${name}」及其下 ${count} 个文件？此操作不可撤销。`)) return;
+    const res = await fetch(`${API}/admin/platform-kb-folder`, {
+      method: 'DELETE', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefix: fullPath }),
+    });
+    if (!res.ok) { toast('删除失败'); return; }
+    const d = await res.json();
+    toast(`已删除 ${d.files_deleted} 个文件`);
+    delete _kbExpanded[fullPath];
+    await loadPlatformKB();
+  }
+
+  // ── Upload ─────────────────────────────────────────────────────────────────
   const uploadZone = document.getElementById('upload-zone');
-  const fileInput = document.getElementById('file-input');
   const folderInput = document.getElementById('folder-input');
 
   uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
@@ -515,80 +906,76 @@
     e.preventDefault();
     uploadZone.classList.remove('drag-over');
     const files = await _collectDropFiles(e.dataTransfer);
-    uploadFiles(files);
+    _uploadFiles(files);
   });
-  fileInput.addEventListener('change', () => { uploadFiles(fileInput.files); fileInput.value = ''; });
-  folderInput.addEventListener('change', () => { uploadFiles(folderInput.files); folderInput.value = ''; });
+  folderInput.addEventListener('change', () => { _uploadFiles(folderInput.files); folderInput.value = ''; });
 
   async function _collectDropFiles(dataTransfer) {
     const result = [];
     const allowed = ['.txt', '.md', '.pdf'];
-    async function traverse(entry) {
+    async function traverse(entry, pathPrefix) {
       if (entry.isFile) {
         const file = await new Promise(r => entry.file(r));
-        if (allowed.some(ext => file.name.toLowerCase().endsWith(ext))) result.push(file);
+        if (allowed.some(ext => file.name.toLowerCase().endsWith(ext))) {
+          // attach relative path for folder structure
+          Object.defineProperty(file, 'webkitRelativePath', { value: pathPrefix ? `${pathPrefix}/${file.name}` : file.name });
+          result.push(file);
+        }
       } else if (entry.isDirectory) {
         const reader = entry.createReader();
         const entries = await new Promise(r => reader.readEntries(r));
-        for (const e of entries) await traverse(e);
+        for (const e of entries) await traverse(e, pathPrefix ? `${pathPrefix}/${entry.name}` : entry.name);
       }
     }
     if (dataTransfer.items) {
       for (const item of dataTransfer.items) {
         const entry = item.webkitGetAsEntry?.();
-        if (entry) await traverse(entry);
+        if (entry) await traverse(entry, '');
       }
-    } else {
-      for (const f of dataTransfer.files) result.push(f);
     }
     return result;
   }
 
-  async function uploadFiles(files) {
+  async function _uploadFiles(files) {
     const status = document.getElementById('upload-status');
-    const list = Array.from(files);
+    const list = Array.from(files).filter(f => ['.txt','.md','.pdf'].some(e => f.name.toLowerCase().endsWith(e)));
     if (!list.length) return;
     let ok = 0, fail = 0;
     for (let i = 0; i < list.length; i++) {
       const file = list[i];
-      status.textContent = `上传中 (${i + 1}/${list.length})：${file.name}`;
+      const relPath = file.webkitRelativePath || file.name;
+      status.textContent = `上传中 (${i + 1}/${list.length})：${relPath}`;
       const fd = new FormData();
-      fd.append('file', file);
+      // Send with relative path as filename so backend stores it in original_name
+      fd.append('file', file, relPath);
       try {
-        const res = await fetch(`${API}/admin/platform-kb/upload`, {
-          method: 'POST', credentials: 'include', body: fd,
-        });
+        const res = await fetch(`${API}/admin/platform-kb/upload`, { method: 'POST', credentials: 'include', body: fd });
         if (res.ok) ok++; else fail++;
       } catch { fail++; }
     }
     status.textContent = '';
     toast(`上传完成：${ok} 个成功${fail ? '，' + fail + ' 个失败' : ''}，正在索引...`);
-    _pollIndexing();
+    _startPollIndexing();
   }
 
   let _pollTimer = null;
-  function _pollIndexing() {
+  function _startPollIndexing() {
     if (_pollTimer) clearInterval(_pollTimer);
     const status = document.getElementById('upload-status');
     _pollTimer = setInterval(async () => {
       await loadPlatformKB();
-      const rows = document.querySelectorAll('#platform-kb-tbody tr');
-      const processing = Array.from(rows).filter(r => r.textContent.includes('processing')).length;
+      const processing = _kbDocs.filter(d => d.status === 'processing').length;
       if (processing > 0) {
         status.textContent = `索引中，还有 ${processing} 个文件待完成...`;
       } else {
         status.textContent = '';
-        clearInterval(_pollTimer);
-        _pollTimer = null;
+        clearInterval(_pollTimer); _pollTimer = null;
       }
     }, 2000);
   }
 
-  async function deletePlatformKB(id, name) {
-    if (!confirm(`删除「${name}」？此操作不可撤销。`)) return;
-    await fetch(`${API}/admin/platform-kb/${id}`, { method: 'DELETE', credentials: 'include' });
-    toast('已删除');
-    loadPlatformKB();
+  function _esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   // ── Prompts ────────────────────────────────────────────────────────────────
@@ -710,17 +1097,28 @@
     if (!currentPromptId) return;
     const msg = document.getElementById('test-message-input').value.trim();
     if (!msg) return;
+    const sel = document.getElementById('test-model-select');
+    const [provider, model] = (sel?.value || 'claude|').split('|');
     const resultArea = document.getElementById('test-result-area');
     resultArea.innerHTML = '<div style="font-size:13px;color:var(--text-muted);">测试中...</div>';
     const res = await fetch(`${API}/admin/prompts/${currentPromptId}/test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ test_message: msg }),
+      body: JSON.stringify({ test_message: msg, provider: provider || 'claude', model: model || '' }),
     });
-    if (!res.ok) { resultArea.innerHTML = '<div style="color:var(--red);font-size:13px;">测试失败</div>'; return; }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      resultArea.innerHTML = `<div style="color:var(--red);font-size:13px;">测试失败：${err.detail || res.status}</div>`;
+      return;
+    }
     const data = await res.json();
-    resultArea.innerHTML = `<div class="field-label">AI 回复预览</div><div class="test-result">${data.reply}</div>`;
+    resultArea.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div class="field-label" style="margin:0;">AI 回复预览</div>
+        <span class="badge badge-blue" style="font-size:11px;">${data.provider} · ${data.model}</span>
+      </div>
+      <div class="test-result">${data.reply}</div>`;
     await loadPrompts();
   }
 
@@ -789,6 +1187,260 @@
     if (e.target === document.getElementById('suggest-modal')) closeSuggestModal();
   });
 
+  // ── Scenario Testing ───────────────────────────────────────────────────────
+
+  let _scenarioTaskId = null;
+  let _scenarioPollTimer = null;
+  let _scenarioHtml = null;
+  let _scenarioStartTime = null;
+  let _scenarioElapsedTimer = null;
+
+  async function loadScenarioList() {
+    const container = document.getElementById('scenario-checklist');
+    const res = await fetch(`${API}/admin/test-scenarios/list`, { credentials: 'include' });
+    if (!res.ok) { container.innerHTML = '<div style="color:var(--red);font-size:13px;">加载失败</div>'; return; }
+    const scenes = await res.json();
+    container.innerHTML = scenes.map(s => `
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+        <input type="checkbox" class="scenario-cb" value="${s.id}" checked style="width:14px;height:14px;flex-shrink:0;" />
+        <span style="font-weight:600;color:var(--accent);width:30px;flex-shrink:0;">${s.id}</span>
+        <span style="flex:1;">${s.name}</span>
+        <span style="color:var(--text-muted);font-size:11px;white-space:nowrap;">${s.business_type}</span>
+      </label>
+    `).join('');
+  }
+
+  function scenarioSelectAll(checked) {
+    document.querySelectorAll('.scenario-cb').forEach(cb => cb.checked = checked);
+  }
+
+  async function runScenarios() {
+    const checked = Array.from(document.querySelectorAll('.scenario-cb:checked')).map(cb => cb.value);
+    if (!checked.length) { toast('请至少选择一个场景'); return; }
+    const noJudge = !document.getElementById('judge-toggle').checked;
+
+    const btn = document.getElementById('run-scenarios-btn');
+    btn.disabled = true;
+    btn.textContent = '测试中...';
+    document.getElementById('scenario-run-status').textContent = '';
+    _scenarioHtml = null;
+    document.getElementById('download-html-btn').style.display = 'none';
+    document.getElementById('scenario-results-tbody').innerHTML = '';
+    document.getElementById('scenario-results-card').style.display = 'none';
+    document.getElementById('scenario-summary-badges').innerHTML = '';
+
+    let runRes;
+    try {
+      runRes = await fetch(`${API}/admin/test-scenarios/run`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cases: checked, no_judge: noJudge }),
+      });
+    } catch (e) {
+      console.error('run fetch error', e);
+      toast('网络错误，请检查后端服务'); btn.disabled = false; btn.textContent = '▶ 开始测试'; return;
+    }
+    if (!runRes.ok) {
+      const errText = await runRes.text().catch(() => '');
+      console.error('run failed', runRes.status, errText);
+      toast(`启动失败 (${runRes.status})`); btn.disabled = false; btn.textContent = '▶ 开始测试'; return;
+    }
+    const { task_id, total } = await runRes.json();
+    _scenarioTaskId = task_id;
+    _scenarioStartTime = Date.now();
+
+    document.getElementById('scenario-progress-wrap').style.display = 'block';
+    document.getElementById('scenario-time-elapsed').textContent = '已耗时 0:00';
+    document.getElementById('scenario-time-remaining').textContent = `每场景约 2-3 分钟，共 ${total} 个`;
+
+    // tick elapsed time every second
+    if (_scenarioElapsedTimer) clearInterval(_scenarioElapsedTimer);
+    _scenarioElapsedTimer = setInterval(() => {
+      const secs = Math.floor((Date.now() - _scenarioStartTime) / 1000);
+      const m = Math.floor(secs / 60), s = secs % 60;
+      document.getElementById('scenario-time-elapsed').textContent = `已耗时 ${m}:${String(s).padStart(2,'0')}`;
+    }, 1000);
+
+    _pollScenarioResult(task_id, total);
+  }
+
+  function _pollScenarioResult(taskId, total) {
+    if (_scenarioPollTimer) clearInterval(_scenarioPollTimer);
+    _scenarioPollTimer = setInterval(async () => {
+      try {
+        const res = await fetch(`${API}/admin/test-scenarios/result/${taskId}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const task = await res.json();
+        const done = task.progress?.done ?? 0;
+        const pct = total ? Math.round(done / total * 100) : 0;
+
+        document.getElementById('scenario-progress-label').textContent =
+          task.status === 'done' ? '✅ 测试完成' : task.status === 'error' ? '❌ 测试出错' : `运行中：第 ${done + 1} / ${total} 个场景`;
+        document.getElementById('scenario-progress-pct').textContent = `${done} / ${total}`;
+        document.getElementById('scenario-progress-bar').style.width = pct + '%';
+
+        // estimate remaining time
+        if (task.status === 'running' && done > 0 && _scenarioStartTime) {
+          const elapsed = (Date.now() - _scenarioStartTime) / 1000;
+          const perScene = elapsed / done;
+          const remaining = Math.round(perScene * (total - done));
+          const rm = Math.floor(remaining / 60), rs = remaining % 60;
+          document.getElementById('scenario-time-remaining').textContent =
+            `预计剩余 ${rm > 0 ? rm + ' 分 ' : ''}${rs} 秒`;
+        } else if (task.status === 'running' && done === 0) {
+          document.getElementById('scenario-time-remaining').textContent = `每场景约 2-3 分钟，共 ${total} 个`;
+        }
+
+        if (task.results?.length) {
+          _renderScenarioResults(task.results);
+        }
+
+        if (task.status === 'done') {
+          clearInterval(_scenarioPollTimer); _scenarioPollTimer = null;
+          clearInterval(_scenarioElapsedTimer); _scenarioElapsedTimer = null;
+          _scenarioHtml = task.html;
+          const totalSecs = Math.floor((Date.now() - _scenarioStartTime) / 1000);
+          const tm = Math.floor(totalSecs / 60), ts = totalSecs % 60;
+          document.getElementById('scenario-time-remaining').textContent = `总耗时 ${tm} 分 ${ts} 秒`;
+          document.getElementById('download-html-btn').style.display = '';
+          document.getElementById('run-scenarios-btn').disabled = false;
+          document.getElementById('run-scenarios-btn').textContent = '▶ 重新测试';
+          _renderSummaryBadges(task.results);
+        } else if (task.status === 'error') {
+          clearInterval(_scenarioPollTimer); _scenarioPollTimer = null;
+          clearInterval(_scenarioElapsedTimer); _scenarioElapsedTimer = null;
+          toast('测试任务出错: ' + (task.error || '未知'));
+          document.getElementById('run-scenarios-btn').disabled = false;
+          document.getElementById('run-scenarios-btn').textContent = '▶ 开始测试';
+        }
+      } catch (e) {
+        console.error('poll error', e);
+      }
+    }, 2500);
+  }
+
+  function _scoreColor(s) {
+    if (!s) return 'var(--text-muted)';
+    if (s >= 4.5) return '#16a34a';
+    if (s >= 4.0) return '#22c55e';
+    if (s >= 3.0) return '#d97706';
+    return '#dc2626';
+  }
+
+  function _renderScenarioResults(results) {
+    const tbody = document.getElementById('scenario-results-tbody');
+    document.getElementById('scenario-results-card').style.display = 'block';
+    tbody.innerHTML = results.map(sc => {
+      const score = sc.avg_score;
+      const scoreStr = score > 0 ? score.toFixed(1) : '—';
+      const rfCount = sc.red_flag_hits?.length ?? 0;
+      const passed = !sc.error && score >= 3.0;
+      const statusBadge = sc.error
+        ? `<span class="badge badge-red">错误</span>`
+        : passed
+          ? `<span class="badge badge-green">通过</span>`
+          : `<span class="badge badge-orange">偏低</span>`;
+      return `<tr>
+        <td style="font-weight:700;color:var(--accent);">${sc.sid}</td>
+        <td>${sc.name}</td>
+        <td style="color:var(--text-muted);font-size:12px;">${sc.business_type}</td>
+        <td style="text-align:center;font-weight:700;font-size:15px;color:${_scoreColor(score)}">${scoreStr}</td>
+        <td style="text-align:center;">${rfCount > 0 ? `<span style="color:#dc2626;font-weight:700;">🚩 ${rfCount}</span>` : '<span style="color:var(--text-muted);">—</span>'}</td>
+        <td style="text-align:center;">${statusBadge}</td>
+        <td style="text-align:center;"><button class="btn btn-ghost btn-sm" onclick="toggleScenarioDetail('${sc.sid}')">展开</button></td>
+      </tr>
+      <tr id="detail-${sc.sid}" style="display:none;">
+        <td colspan="7" style="padding:0;">
+          <div style="padding:16px 20px;background:var(--surface);border-top:1px solid var(--border);">
+            ${_renderScenarioDetail(sc)}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function _renderScenarioDetail(sc) {
+    if (sc.error) return `<div style="color:var(--red);font-size:13px;">错误：${sc.error}</div>`;
+    return sc.turns.map(t => {
+      const s = t.score;
+      const hasScore = s && !s.error && s.overall > 0;
+      const dims = hasScore ? `
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;">
+          ${[['准确', s.accuracy], ['可操', s.actionability], ['完整', s.completeness], ['清晰', s.clarity], ['相关', s.relevance], ['数据', s.data_usage]].map(([label, v]) =>
+            `<span><span style="color:var(--text-muted);">${label}</span> <strong style="color:${_scoreColor(v)}">${v || '—'}</strong></span>`
+          ).join('')}
+        </div>
+        ${s.summary ? `<div style="margin-top:6px;font-size:12px;color:var(--text-muted);">评语：${s.summary}</div>` : ''}
+        ${s.weaknesses?.length ? `<div style="margin-top:4px;font-size:12px;color:#d97706;">不足：${s.weaknesses[0]}</div>` : ''}
+        ${s.red_flags?.length ? s.red_flags.map(rf => `<div style="font-size:12px;color:var(--red);">🚩 红旗：${rf}</div>`).join('') : ''}
+      ` : s?.error ? `<div style="font-size:12px;color:var(--text-muted);">Judge 跳过：${s.error}</div>` : '';
+
+      return `<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <div style="padding:10px 14px;background:var(--card);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:600;font-size:13px;">第 ${t.turn_no} 轮</span>
+          <span style="display:flex;gap:8px;font-size:11px;color:var(--text-muted);">
+            ${t.has_tool_call ? '<span style="background:#eff6ff;color:var(--accent);padding:1px 6px;border-radius:4px;">SQL</span>' : ''}
+            ${t.has_card ? '<span style="background:#f0fdf4;color:#16a34a;padding:1px 6px;border-radius:4px;">卡片</span>' : ''}
+            ${t.has_chart ? '<span style="background:#fefce8;color:#d97706;padding:1px 6px;border-radius:4px;">图表</span>' : ''}
+            <span>${t.chars} 字 / ${t.latency_ms} ms</span>
+            ${hasScore ? `<strong style="color:${_scoreColor(s.overall)}">Judge ${s.overall.toFixed(1)}</strong>` : ''}
+          </span>
+        </div>
+        <div style="padding:10px 14px;background:#fafbff;border-top:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;">用户问题</div>
+          <div style="font-size:13px;line-height:1.6;">${escHtml(t.user_msg)}</div>
+        </div>
+        <div style="padding:10px 14px;background:var(--card);border-top:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;">AI 回复</div>
+          <div style="font-size:13px;line-height:1.6;white-space:pre-wrap;max-height:300px;overflow-y:auto;">${escHtml(t.ai_response)}</div>
+          ${dims}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleScenarioDetail(sid) {
+    const row = document.getElementById(`detail-${sid}`);
+    const btn = row.previousElementSibling.querySelector('button');
+    if (row.style.display === 'none') {
+      row.style.display = '';
+      btn.textContent = '收起';
+    } else {
+      row.style.display = 'none';
+      btn.textContent = '展开';
+    }
+  }
+
+  function _renderSummaryBadges(results) {
+    if (!results?.length) return;
+    const scores = results.filter(r => r.avg_score > 0).map(r => r.avg_score);
+    const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2) : '—';
+    const passed = results.filter(r => !r.error && r.avg_score >= 3.0).length;
+    const rfTotal = results.reduce((a, r) => a + (r.red_flag_hits?.length ?? 0), 0);
+    const el = document.getElementById('scenario-summary-badges');
+    el.innerHTML = `
+      <span class="badge badge-blue">均分 ${avg}</span>
+      <span class="badge badge-green">通过 ${passed}/${results.length}</span>
+      ${rfTotal > 0 ? `<span class="badge badge-red">🚩 ${rfTotal} 红旗</span>` : ''}
+    `;
+  }
+
+  function downloadReport() {
+    if (!_scenarioHtml) return;
+    const blob = new Blob([_scenarioHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `test_report_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
   // ── LLM Config ────────────────────────────────────────────────────────────
 
   const DEFAULT_MODELS = {
@@ -805,6 +1457,9 @@
     ]);
     const configs = cfgRes.ok ? await cfgRes.json() : [];
     const statusData = statusRes.ok ? await statusRes.json() : {};
+
+    // Sync test-model-select with active configs
+    _syncTestModelSelect(configs);
 
     // Banner: what users actually see in frontend dropdown
     const banner = document.getElementById('llm-active-banner');
@@ -842,6 +1497,24 @@
         </td>
       </tr>
     `).join('');
+  }
+
+  function _syncTestModelSelect(configs) {
+    const sel = document.getElementById('test-model-select');
+    if (!sel) return;
+    const active = configs.filter(c => c.is_active);
+    if (!active.length) {
+      sel.innerHTML = '<option value="">无已启用模型</option>';
+      return;
+    }
+    const prev = sel.value;
+    sel.innerHTML = active.map(c => {
+      const model = c.model || DEFAULT_MODELS[c.provider] || c.provider;
+      const val = `${c.provider}|${model}`;
+      return `<option value="${val}">${c.provider} · ${model}${c.label ? ' (' + c.label + ')' : ''}</option>`;
+    }).join('');
+    // restore previous selection if still available
+    if (prev && Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
   }
 
   async function toggleLLM(id) {

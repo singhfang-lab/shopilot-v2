@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from .auth import get_current_user
-from .db import Merchant, UserMerchant, get_db
+from .db import BrandProfile, Merchant, UserMerchant, get_db
 from .rag import ingest_text
 from . import rag as _rag
 
@@ -147,11 +147,17 @@ def _get_market_hint(category: str) -> dict:
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
 GOOGLE_MAPS_KEY = os.environ.get("GOOGLE_MAPS_KEY", "")
+AMAP_KEY = os.environ.get("AMAP_KEY", "")
 CLAUDE_API_BASE = "https://api.anthropic.com/v1"
 CLAUDE_MODEL = "claude-sonnet-4-6"
 
 _CHAINS_PATH = Path(__file__).parent / "chains.json"
 _chains_cache: Optional[list[dict]] = None
+
+# Chinese region detection keywords
+_CN_KEYWORDS = ("省", "市", "区", "县", "街", "路", "号", "北京", "上海", "广州", "深圳", "成都",
+                 "杭州", "武汉", "重庆", "西安", "南京", "天津", "苏州", "郑州", "长沙", "青岛",
+                 "沈阳", "宁波", "东莞", "合肥", "佛山", "昆明")
 
 
 def _load_chains() -> list[dict]:
@@ -180,19 +186,136 @@ def _match_chain(query: str) -> Optional[dict]:
     return None
 
 
+def _match_brand_profile(query: str, db: Session) -> Optional[BrandProfile]:
+    """Search brand_profiles table (CN brands) by exact name or alias."""
+    q = query.strip()
+    q_lower = q.lower()
+
+    # Exact name match
+    result = db.exec(
+        select(BrandProfile).where(BrandProfile.name == q, BrandProfile.is_active == True)
+    ).first()
+    if result:
+        return result
+
+    # Alias match and partial name search across all active CN brands
+    all_cn = db.exec(
+        select(BrandProfile).where(BrandProfile.region == "cn", BrandProfile.is_active == True)
+    ).all()
+    for bp in all_cn:
+        # Check aliases
+        try:
+            aliases = json.loads(bp.aliases or "[]")
+        except Exception:
+            aliases = []
+        if any(a.lower() == q_lower for a in aliases):
+            return bp
+    # Partial name match
+    for bp in all_cn:
+        if q_lower in bp.name.lower():
+            return bp
+    return None
+
+
+def _brand_profile_to_chain_kb(bp: BrandProfile) -> dict:
+    """Convert BrandProfile to chain_kb dict (same format as chains.json brand)."""
+    try:
+        markets = json.loads(bp.markets or "[]")
+    except Exception:
+        markets = []
+    return {
+        "category": bp.business_type,
+        "storeCount": bp.store_count,
+        "storeCountAsOf": bp.store_count_year,
+        "priceBand": bp.price_band,
+        "priceTier": bp.price_tier,
+        "founded": bp.founded_year,
+        "headquarters": bp.headquarters,
+        "markets": markets,
+        "expansion": bp.expansion,
+        "description": bp.description,
+        "avg_price_amap": bp.avg_price_amap,
+        "avg_rating_amap": bp.avg_rating_amap,
+        "region": bp.region,
+    }
+
+
+async def _amap_search(query: str) -> list[dict]:
+    """Search Chinese brands via AMap Text Search API."""
+    amap_key = os.environ.get("AMAP_KEY", "")
+    if not amap_key:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.get(
+                "https://restapi.amap.com/v3/place/text",
+                params={
+                    "key": amap_key,
+                    "keywords": query,
+                    "types": "050000|060000|070000",  # 餐饮/购物/生活服务
+                    "city": "",
+                    "citylimit": "false",
+                    "offset": 20,
+                    "page": 1,
+                    "extensions": "base",
+                    "output": "json",
+                },
+            )
+        if res.status_code != 200:
+            return []
+        data = res.json()
+        if data.get("status") != "1":
+            return []
+        pois = data.get("pois", [])
+        return pois
+    except Exception as e:
+        print(f"[onboarding/search] AMap error: {e}")
+        return []
+
+
 # ── /onboarding/search ──────────────────────────────────────────────────────
 
 @router.get("/search")
 async def search_brand(
     q: str,
+    region: str = "id",  # "cn" | "id"
     user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Search brand via Google Places + local chains KB."""
+    """Search brand via brand_profiles (CN) or Google Places (ID) + local chains KB."""
     if not q or len(q.strip()) < 1:
         return {"candidates": []}
 
-    chain_match = _match_chain(q)
     candidates: list[dict] = []
+
+    # ── Chinese region: check brand_profiles table first ────────────────────
+    if region == "cn":
+        bp = _match_brand_profile(q, db)
+        if bp:
+            chain_kb = _brand_profile_to_chain_kb(bp)
+            candidates = [{
+                "name": bp.name,
+                "rating": bp.avg_rating_amap or 0,
+                "review_count": 0,
+                "store_count": bp.store_count or 1,
+                "addresses": [],
+                "place_ids": [],
+                "photo_url": None,
+                "merchant_type": "existing",
+                "chain_kb": chain_kb,
+                "brand_profile_id": bp.id,
+                "has_prebuilt_profile": bool(bp.profile_json),
+            }]
+            return {"candidates": candidates}
+
+        # Unrecognized CN brand → AMap search
+        amap_pois = await _amap_search(q)
+        if amap_pois:
+            candidates = _aggregate_amap(amap_pois, q)
+        return {"candidates": candidates}
+
+    # ── Indonesia region: existing Google Places flow ────────────────────────
+    chain_match = _match_chain(q)
 
     google_key = os.environ.get("GOOGLE_MAPS_KEY", "")
     if google_key:
@@ -328,6 +451,66 @@ def _chain_kb_fields(brand: dict) -> dict:
     }
 
 
+def _aggregate_amap(pois: list[dict], query: str) -> list[dict]:
+    """Aggregate AMap POIs into onboarding candidates (similar structure to Google Places)."""
+    q_lower = query.strip().lower()
+    chain_entries: list[dict] = []
+    individual: list[dict] = []
+
+    for poi in pois:
+        name = (poi.get("name") or "").strip()
+        if not name:
+            continue
+        n_lower = name.lower()
+        address = poi.get("address") or poi.get("vicinity") or ""
+        if isinstance(address, list):
+            address = "".join(address)
+
+        entry = {
+            "place_id": poi.get("id") or poi.get("uid") or "",
+            "name": name,
+            "rating": float(poi.get("biz_ext", {}).get("rating") or 0),
+            "review_count": 0,
+            "address": address,
+        }
+
+        # Group by name similarity
+        if q_lower in n_lower or n_lower.startswith(q_lower[:2]):
+            chain_entries.append(entry)
+        else:
+            individual.append(entry)
+
+    results: list[dict] = []
+
+    if chain_entries:
+        # Aggregate chain locations
+        best = chain_entries[0]
+        results.append({
+            "name": chain_entries[0]["name"],
+            "rating": round(sum(e["rating"] for e in chain_entries) / len(chain_entries), 1) if chain_entries else 0,
+            "review_count": 0,
+            "store_count": len(chain_entries),
+            "addresses": [e["address"] for e in chain_entries[:3]],
+            "place_ids": [e["place_id"] for e in chain_entries],
+            "photo_url": None,
+            "merchant_type": "existing",
+        })
+    elif individual:
+        for entry in individual[:5]:
+            results.append({
+                "name": entry["name"],
+                "rating": entry["rating"],
+                "review_count": 0,
+                "store_count": 1,
+                "addresses": [entry["address"]],
+                "place_ids": [entry["place_id"]],
+                "photo_url": None,
+                "merchant_type": "existing",
+            })
+
+    return results
+
+
 # ── /onboarding/bind ────────────────────────────────────────────────────────
 
 class BindRequest(BaseModel):
@@ -339,6 +522,8 @@ class BindRequest(BaseModel):
     addresses: list[str] = []
     chain_kb: Optional[dict] = None
     merchant_type: str = "existing"  # "existing" | "new"
+    brand_profile_id: Optional[int] = None  # CN brand DB ID if matched
+    region: str = "id"  # "cn" | "id"
 
 
 @router.post("/bind")
@@ -361,6 +546,11 @@ def bind_merchant(
     }
     if req.chain_kb:
         meta["chain_kb"] = req.chain_kb
+
+    if req.brand_profile_id:
+        meta["brand_profile_id"] = req.brand_profile_id
+    if req.region:
+        meta["region"] = req.region
 
     if existing_um:
         merchant = db.get(Merchant, existing_um.merchant_id)
@@ -477,6 +667,7 @@ class GenerateKBRequest(BaseModel):
     brand_name: str
     merchant_type: str = "existing"
     chain_kb: Optional[dict] = None
+    brand_profile_id: Optional[int] = None  # CN pre-built profile
 
 
 @router.post("/generate-kb")
@@ -485,7 +676,7 @@ async def generate_kb(
     user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Stream SSE: use Gemini with web grounding to generate initial KB."""
+    """Stream SSE: use pre-generated profile (CN brands) or Claude for new brands."""
     # Verify user owns this merchant
     um = db.exec(
         select(UserMerchant).where(
@@ -500,6 +691,26 @@ async def generate_kb(
 
     # Clear any existing KB for this merchant before regenerating
     await _rag.clear_shop_kb_async(shop_id)
+
+    # ── CN pre-built profile fast path ──────────────────────────────────────
+    # Resolve brand_profile_id: from request or from merchant meta
+    bp_id = req.brand_profile_id
+    if not bp_id:
+        merchant_check = db.get(Merchant, req.merchant_id)
+        if merchant_check:
+            try:
+                _meta_check = json.loads(merchant_check.meta_json or "{}")
+                bp_id = _meta_check.get("brand_profile_id")
+            except Exception:
+                pass
+
+    if bp_id:
+        bp = db.get(BrandProfile, bp_id)
+        if bp and bp.profile_json:
+            return StreamingResponse(
+                _stream_prebuilt(bp, shop_id, req.merchant_id, db),
+                media_type="text/event-stream",
+            )
 
     async def _stream():
         yield _sse("status", {"msg": f"正在分析 {req.brand_name} 的品牌信息..."})
@@ -806,6 +1017,63 @@ async def generate_kb(
             yield _sse("error", {"msg": f"写入知识库失败：{e}"})
 
     return StreamingResponse(_stream(), media_type="text/event-stream")
+
+
+async def _stream_prebuilt(bp: BrandProfile, shop_id: str, merchant_id: int, db: Session):
+    """Stream pre-generated brand profile from BrandProfile.profile_json without calling Claude."""
+    yield _sse("status", {"msg": f"正在加载 {bp.name} 的品牌画像..."})
+
+    try:
+        profile_json = json.loads(bp.profile_json)
+    except Exception as e:
+        yield _sse("error", {"msg": f"品牌画像数据异常：{e}"})
+        return
+
+    # Stream the JSON in chunks to simulate streaming experience
+    full_text = json.dumps(profile_json, ensure_ascii=False)
+    chunk_size = 128
+    for i in range(0, len(full_text), chunk_size):
+        yield _sse("chunk", {"text": full_text[i:i + chunk_size]})
+
+    yield _sse("status", {"msg": "正在写入知识库..."})
+
+    # Build RAG text from pre-built profile
+    ss = profile_json.get("scan_summary", {})
+    diag = profile_json.get("diagnosis", {})
+    rag_parts = [
+        f"# {bp.name} 品牌知识库\n",
+        "## 平台扫描摘要",
+        ss.get("mirror", ""), ss.get("window", ""), ss.get("door", ""), ss.get("action", ""),
+        "\n## 诊断",
+        diag.get("because", ""), diag.get("therefore", ""), diag.get("action", ""),
+    ]
+    comps = profile_json.get("competitors", {})
+    all_comp_names = []
+    for tier in ("head", "direct", "growth"):
+        for c in comps.get(tier, []):
+            if not c.get("is_self"):
+                all_comp_names.append(f"{c['name']}（{c.get('store_count', '')}家，{c.get('price_band', '')}）")
+    if all_comp_names:
+        rag_parts.append("\n## 竞品\n" + "\n".join(f"- {n}" for n in all_comp_names))
+
+    doc_text = "\n".join(p for p in rag_parts if p)
+
+    try:
+        await ingest_text(text=doc_text, shop_id=shop_id, source=f"onboarding:{bp.name}")
+        # Store profile_json in merchant meta
+        merchant = db.get(Merchant, merchant_id)
+        if merchant:
+            try:
+                meta = json.loads(merchant.meta_json or "{}")
+                meta["profile_json"] = profile_json
+                merchant.meta_json = json.dumps(meta, ensure_ascii=False)
+                db.add(merchant)
+                db.commit()
+            except Exception as e:
+                print(f"[stream_prebuilt] Failed to save profile_json: {e}")
+        yield _sse("done", {"msg": "品牌画像加载完成", "chars": len(full_text), "has_profile": True, "source": "prebuilt"})
+    except Exception as e:
+        yield _sse("error", {"msg": f"写入知识库失败：{e}"})
 
 
 def _sse(event: str, data: dict) -> str:
