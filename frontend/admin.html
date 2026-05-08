@@ -155,6 +155,9 @@
     .kb-card-actions { position: absolute; top: 4px; right: 4px; opacity: 0; display: flex; gap: 2px; transition: opacity 0.15s; }
     .kb-card-actions button { padding: 2px 5px; font-size: 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--card); color: var(--text-muted); cursor: pointer; }
     .kb-card-actions button:hover { background: #fee2e2; color: var(--red); border-color: var(--red); }
+    .kb-folder-option { transition: background 0.1s; }
+    .kb-folder-option:hover { background: var(--surface); }
+    .kb-folder-option.selected { background: #eff6ff; color: var(--accent); font-weight: 600; }
 
     /* ── Breadcrumb ── */
     .kb-bc-item { color: var(--accent); cursor: pointer; }
@@ -243,19 +246,9 @@
 
     <!-- Platform KB -->
     <div class="tab-panel" id="tab-platform-kb">
-      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div>
-          <div class="page-title">平台知识库</div>
-          <div class="page-sub">上传后自动索引，所有用户可用</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
-          <span id="kb-stats" style="font-size:12px;color:var(--text-muted);"></span>
-          <button class="btn btn-ghost btn-sm" onclick="loadPlatformKB()" title="刷新">↻</button>
-          <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-            <button id="kb-view-list" class="btn btn-sm" style="border-radius:0;border:none;background:var(--surface);color:var(--text-muted);padding:5px 10px;" onclick="setKBView('list')" title="列表视图">☰</button>
-            <button id="kb-view-grid" class="btn btn-sm" style="border-radius:0;border:none;background:var(--accent);color:#fff;padding:5px 10px;" onclick="setKBView('grid')" title="宫格视图">⊞</button>
-          </div>
-        </div>
+      <div class="page-header">
+        <div class="page-title">平台知识库</div>
+        <div class="page-sub">上传后自动索引，所有用户可用</div>
       </div>
 
       <!-- Upload zone -->
@@ -263,19 +256,30 @@
         <div style="padding:16px 20px;">
           <div class="upload-zone" id="upload-zone" style="padding:20px;">
             <div class="upload-zone-icon" style="font-size:24px;margin-bottom:6px;">📁</div>
-            <div class="upload-zone-text">拖拽文件夹到此处，或点击选择文件夹上传</div>
-            <div style="margin-top:10px;">
-              <button class="btn btn-primary btn-sm" onclick="document.getElementById('folder-input').click()">选择文件夹</button>
+            <div class="upload-zone-text">拖拽文件或文件夹到此处，或点击按钮上传</div>
+            <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;">
+              <button class="btn btn-primary btn-sm" onclick="kbPickFolder('file')">选择文件</button>
+              <button class="btn btn-ghost btn-sm" onclick="kbPickFolder('folder')">选择文件夹</button>
             </div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">支持 TXT、MD、PDF · 自动保留文件夹目录结构</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">支持 TXT、MD、PDF · 选择文件夹自动保留目录结构</div>
           </div>
+          <input type="file" id="file-input" accept=".txt,.md,.pdf" style="display:none" multiple />
           <input type="file" id="folder-input" accept=".txt,.md,.pdf" style="display:none" multiple webkitdirectory />
           <div id="upload-status" style="margin-top:10px;font-size:13px;color:var(--text-muted);min-height:20px;"></div>
         </div>
       </div>
 
-      <!-- Breadcrumb -->
-      <div id="kb-breadcrumb" style="display:flex;align-items:center;gap:4px;font-size:13px;margin-bottom:12px;flex-wrap:wrap;"></div>
+      <!-- Toolbar: breadcrumb + actions -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div id="kb-breadcrumb" style="display:flex;align-items:center;gap:4px;font-size:13px;flex-wrap:wrap;flex:1;"></div>
+        <span id="kb-stats" style="font-size:12px;color:var(--text-muted);white-space:nowrap;"></span>
+        <button class="btn btn-ghost btn-sm" onclick="kbNewFolder()" style="white-space:nowrap;">+ 新建目录</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadPlatformKB()" title="刷新">↻</button>
+        <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <button id="kb-view-list" class="btn btn-sm" style="border-radius:0;border:none;background:var(--surface);color:var(--text-muted);padding:5px 10px;" onclick="setKBView('list')" title="列表视图">☰</button>
+          <button id="kb-view-grid" class="btn btn-sm" style="border-radius:0;border:none;background:var(--accent);color:#fff;padding:5px 10px;" onclick="setKBView('grid')" title="宫格视图">⊞</button>
+        </div>
+      </div>
 
       <!-- File tree / grid -->
       <div class="card">
@@ -506,6 +510,23 @@
   </div>
 </div>
 
+<!-- KB folder picker modal -->
+<div id="kb-folder-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;width:400px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">选择上传目录</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">文件将上传到选中的目录下</div>
+    <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:16px;">
+      <div id="kb-folder-list"></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-ghost btn-sm" onclick="kbNewFolderInModal()" style="font-size:12px;">+ 新建目录</button>
+      <div style="flex:1;"></div>
+      <button class="btn btn-ghost" onclick="kbFolderModalClose()">取消</button>
+      <button class="btn btn-primary" id="kb-folder-confirm-btn" onclick="kbFolderConfirm()">确认上传</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -629,10 +650,10 @@
   }
 
   function _renderKBStats() {
-    const total = _kbDocs.length;
-    const indexed = _kbDocs.filter(d => d.status === 'indexed').length;
-    const processing = _kbDocs.filter(d => d.status === 'processing').length;
-    const chunks = _kbDocs.reduce((a, d) => a + (d.chunk_count || 0), 0);
+    const realDocs = _kbDocs.filter(d => !d.original_name.endsWith('/.keep'));
+    const total = realDocs.length;
+    const processing = realDocs.filter(d => d.status === 'processing').length;
+    const chunks = realDocs.reduce((a, d) => a + (d.chunk_count || 0), 0);
     document.getElementById('kb-stats').textContent =
       `${total} 个文件 · ${chunks} chunks${processing ? ' · ' + processing + ' 个索引中' : ''}`;
   }
@@ -646,6 +667,8 @@
       const rel = pathPrefix ? name.slice(pathPrefix.length + 1) : name;
       const slash = rel.indexOf('/');
       if (slash === -1) {
+        // Skip .keep placeholder files — they only exist to represent empty folders
+        if (rel === '.keep') continue;
         files.push(doc);
       } else {
         const folder = rel.slice(0, slash);
@@ -712,7 +735,7 @@
     for (const [fname, fdocs] of Object.entries(folders).sort()) {
       const fullPath = prefix ? `${prefix}/${fname}` : fname;
       const isOpen = _kbExpanded[fullPath];
-      const fileCount = fdocs.length;
+      const fileCount = fdocs.filter(d => !d.original_name.endsWith('/.keep')).length;
       html += `
         <div class="kb-row" onclick="kbToggleFolder('${_esc(fullPath)}')">
           <span class="kb-chevron ${isOpen ? 'open' : ''}">▶</span>
@@ -760,7 +783,7 @@
           <span class="kb-chevron ${isOpen ? 'open' : ''}">▶</span>
           <span class="kb-icon">📁</span>
           <span class="kb-name">${_esc(fname)}</span>
-          <span class="kb-meta">${fdocs.length} 个文件</span>
+          <span class="kb-meta">${fdocs.filter(d => !d.original_name.endsWith('/.keep')).length} 个文件</span>
           <div class="kb-actions" onclick="event.stopPropagation()">
             <button onclick="kbRenameFolder('${_esc(fullPath)}', '${_esc(fname)}')">改名</button>
             <button class="danger" onclick="kbDeleteFolder('${_esc(fullPath)}', '${_esc(fname)}')">删除</button>
@@ -803,7 +826,7 @@
           </div>
           <div class="kb-card-icon">📁</div>
           <div class="kb-card-name" title="${_esc(fname)}">${_esc(fname)}</div>
-          <div style="font-size:10px;color:var(--text-muted);">${fdocs.length} 个文件</div>
+          <div style="font-size:10px;color:var(--text-muted);">${fdocs.filter(d => !d.original_name.endsWith('/.keep')).length} 个文件</div>
         </div>`;
     }
     for (const doc of files.sort((a, b) => a.original_name.localeCompare(b.original_name))) {
@@ -882,7 +905,7 @@
 
   // ── Delete folder ─────────────────────────────────────────────────────────
   async function kbDeleteFolder(fullPath, name) {
-    const count = _docsUnder(fullPath).length;
+    const count = _docsUnder(fullPath).filter(d => !d.original_name.endsWith('/.keep')).length;
     if (!confirm(`删除文件夹「${name}」及其下 ${count} 个文件？此操作不可撤销。`)) return;
     const res = await fetch(`${API}/admin/platform-kb-folder`, {
       method: 'DELETE', credentials: 'include',
@@ -896,9 +919,105 @@
     await loadPlatformKB();
   }
 
+  // ── New folder ───────────────────────────────────────────────────────────
+  async function kbNewFolder() {
+    const name = prompt('新建目录名称：');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    if (trimmed.includes('/')) { toast('目录名不能包含斜杠'); return; }
+    const fullPath = _kbPath.length > 0 ? `${_kbPath.join('/')}/${trimmed}` : trimmed;
+    const res = await fetch(`${API}/admin/platform-kb-folder`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: fullPath }),
+    });
+    if (!res.ok) { toast('新建失败'); return; }
+    toast(`已创建目录「${trimmed}」`);
+    await loadPlatformKB();
+  }
+
   // ── Upload ─────────────────────────────────────────────────────────────────
   const uploadZone = document.getElementById('upload-zone');
+  const fileInput = document.getElementById('file-input');
   const folderInput = document.getElementById('folder-input');
+
+  let _kbUploadType = 'file';       // 'file' | 'folder'
+  let _kbUploadTargetFolder = '';   // prefix to prepend to each uploaded file path
+
+  // Folder picker modal
+  function kbPickFolder(type, preselect) {
+    _kbUploadType = type;
+    // Use preselect if provided (e.g. after creating a new folder), otherwise default to current browsed folder
+    _kbUploadTargetFolder = preselect !== undefined ? preselect : _kbPath.join('/');
+
+    // Collect all folder paths from docs (including .keep placeholders)
+    const folderSet = new Set();
+    (_kbDocs || []).forEach(doc => {
+      const parts = (doc.original_name || '').split('/');
+      for (let i = 1; i < parts.length; i++) {
+        folderSet.add(parts.slice(0, i).join('/'));
+      }
+    });
+    const folders = Array.from(folderSet).sort();
+
+    const list = document.getElementById('kb-folder-list');
+    const curPath = _kbUploadTargetFolder;
+    let html = `<div class="kb-folder-option${curPath === '' ? ' selected' : ''}"
+      data-folder="" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:14px;">
+      📁 根目录</div>`;
+    folders.forEach(f => {
+      const depth = f.split('/').length - 1;
+      const isSelected = f === curPath;
+      html += `<div class="kb-folder-option${isSelected ? ' selected' : ''}" data-folder="${_esc(f)}"
+        style="padding:10px 14px;padding-left:${14 + depth * 16}px;cursor:pointer;border-bottom:1px solid var(--border);font-size:14px;">
+        📁 ${_esc(f.split('/').pop())}</div>`;
+    });
+    list.innerHTML = html;
+
+    list.querySelectorAll('.kb-folder-option').forEach(el => {
+      el.addEventListener('click', () => {
+        list.querySelectorAll('.kb-folder-option').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        _kbUploadTargetFolder = el.dataset.folder;
+      });
+    });
+
+    const modal = document.getElementById('kb-folder-modal');
+    modal.style.display = 'flex';
+    // Scroll selected item into view
+    const selected = list.querySelector('.kb-folder-option.selected');
+    if (selected) selected.scrollIntoView({ block: 'nearest' });
+  }
+
+  function kbFolderModalClose() {
+    document.getElementById('kb-folder-modal').style.display = 'none';
+  }
+
+  async function kbNewFolderInModal() {
+    const name = prompt('新建目录名称：');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    if (trimmed.includes('/')) { toast('目录名不能包含斜杠'); return; }
+    const fullPath = _kbUploadTargetFolder ? `${_kbUploadTargetFolder}/${trimmed}` : trimmed;
+    const res = await fetch(`${API}/admin/platform-kb-folder`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: fullPath }),
+    });
+    if (!res.ok) { toast('新建失败'); return; }
+    // Reload docs then re-render modal with new folder selected
+    await loadPlatformKB();
+    kbPickFolder(_kbUploadType, fullPath);  // re-open with updated list + new folder selected
+  }
+
+  function kbFolderConfirm() {
+    kbFolderModalClose();
+    if (_kbUploadType === 'folder') {
+      folderInput.click();
+    } else {
+      fileInput.click();
+    }
+  }
 
   uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
   uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
@@ -906,8 +1025,10 @@
     e.preventDefault();
     uploadZone.classList.remove('drag-over');
     const files = await _collectDropFiles(e.dataTransfer);
+    _kbUploadTargetFolder = _kbPath.join('/');  // drop into current viewed folder
     _uploadFiles(files);
   });
+  fileInput.addEventListener('change', () => { _uploadFiles(fileInput.files); fileInput.value = ''; });
   folderInput.addEventListener('change', () => { _uploadFiles(folderInput.files); folderInput.value = ''; });
 
   async function _collectDropFiles(dataTransfer) {
@@ -943,7 +1064,12 @@
     let ok = 0, fail = 0;
     for (let i = 0; i < list.length; i++) {
       const file = list[i];
-      const relPath = file.webkitRelativePath || file.name;
+      // For folder uploads, webkitRelativePath already contains structure.
+      // For single file uploads, prepend the chosen target folder.
+      let relPath = file.webkitRelativePath || file.name;
+      if (!file.webkitRelativePath && _kbUploadTargetFolder) {
+        relPath = `${_kbUploadTargetFolder}/${file.name}`;
+      }
       status.textContent = `上传中 (${i + 1}/${list.length})：${relPath}`;
       const fd = new FormData();
       // Send with relative path as filename so backend stores it in original_name

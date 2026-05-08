@@ -248,6 +248,46 @@ async def rename_platform_kb(
     return {"ok": True, "original_name": doc.original_name}
 
 
+class CreateFolderRequest(BaseModel):
+    path: str  # e.g. "新建文件夹" or "父目录/子目录"
+
+
+@router.post("/platform-kb-folder")
+async def create_folder_platform_kb(
+    req: CreateFolderRequest,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Create a virtual folder by inserting a .keep placeholder document."""
+    folder_path = req.path.strip("/").strip()
+    if not folder_path:
+        raise HTTPException(status_code=400, detail="目录名不能为空")
+    placeholder_name = f"{folder_path}/.keep"
+    # Check if already exists
+    existing = db.exec(
+        select(PlatformKBDocument).where(PlatformKBDocument.original_name == placeholder_name)
+    ).first()
+    if existing:
+        return {"ok": True, "id": existing.id, "original_name": existing.original_name}
+
+    PLATFORM_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    safe_name = f"{secrets.token_hex(6)}_.keep"
+    save_path = PLATFORM_UPLOADS_DIR / safe_name
+    save_path.write_bytes(b"")
+
+    doc = PlatformKBDocument(
+        filename=safe_name,
+        original_name=placeholder_name,
+        status="indexed",
+        chunk_count=0,
+        uploaded_by=admin.id,
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+    return {"ok": True, "id": doc.id, "original_name": doc.original_name}
+
+
 class RenameFolderRequest(BaseModel):
     old_prefix: str   # e.g. "新建文件夹/07_营销活动与增长"
     new_prefix: str   # e.g. "新建文件夹/07_营销推广与增长"
