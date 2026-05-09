@@ -18,7 +18,9 @@ from sqlmodel import Session, select
 
 from .auth import get_merchant_for_user, require_admin
 from .db import (
+    BrandProfile, BrandReport,
     KBDocument, LLMConfig, Merchant, PlatformKBDocument, SystemPrompt,
+    TestScenario,
     User, UserMerchant, get_db,
 )
 from . import rag, llm as llm_module
@@ -343,14 +345,23 @@ async def delete_folder_platform_kb(
 # ── Prompt management ─────────────────────────────────────────────────────────
 
 @router.get("/prompts")
-def list_prompts(admin=Depends(require_admin), db: Session = Depends(get_db)):
-    prompts = db.exec(select(SystemPrompt).order_by(SystemPrompt.version.desc())).all()
+def list_prompts(
+    prompt_type: str = "chat",
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    prompts = db.exec(
+        select(SystemPrompt)
+        .where(SystemPrompt.prompt_type == prompt_type)
+        .order_by(SystemPrompt.version.desc())
+    ).all()
     return [
         {
             "id": p.id,
             "version": p.version,
             "label": p.label,
             "status": p.status,
+            "prompt_type": p.prompt_type,
             "created_at": p.created_at.isoformat(),
             "published_at": p.published_at.isoformat() if p.published_at else None,
             "content_preview": p.content[:120] + "..." if len(p.content) > 120 else p.content,
@@ -384,6 +395,7 @@ def get_prompt(prompt_id: int, admin=Depends(require_admin), db: Session = Depen
 class CreatePromptRequest(BaseModel):
     content: str
     label: str = ""
+    prompt_type: str = "chat"
 
 
 @router.post("/prompts")
@@ -392,13 +404,18 @@ def create_prompt(
     admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    latest = db.exec(select(SystemPrompt).order_by(SystemPrompt.version.desc())).first()
+    latest = db.exec(
+        select(SystemPrompt)
+        .where(SystemPrompt.prompt_type == req.prompt_type)
+        .order_by(SystemPrompt.version.desc())
+    ).first()
     next_version = (latest.version + 1) if latest else 1
     p = SystemPrompt(
         version=next_version,
         content=req.content,
         label=req.label or f"V{next_version}",
         status="draft",
+        prompt_type=req.prompt_type,
         created_by=admin.id,
     )
     db.add(p)
@@ -686,17 +703,37 @@ def delete_llm_config(
 
 # ── Scenario Testing ──────────────────────────────────────────────────────────
 
+SCENARIO_DATA_DIR = Path("/Users/singhfang/Downloads/问题库&模拟商家数据")
+
 # In-memory task store: task_id → {status, progress, results, html, error}
 _test_tasks: dict[str, dict] = {}
 
 
-@router.get("/test-scenarios/list")
-def list_test_scenarios(admin=Depends(require_admin)):
-    from .test_scenarios import SCENE_META
-    return [
-        {"id": sid, "name": m["name"], "business_type": m["business_type"]}
-        for sid, m in SCENE_META.items()
-    ]
+@router.get("/test-scenarios/data-files")
+def list_scenario_data_files(admin=Depends(require_admin)):
+    """Return xlsx/csv files available in the scenario DATA_DIR."""
+    if not SCENARIO_DATA_DIR.exists():
+        return []
+    files = sorted(
+        f.name for f in SCENARIO_DATA_DIR.iterdir()
+        if f.is_file() and f.suffix.lower() in (".xlsx", ".xls", ".csv")
+    )
+    return files
+
+
+@router.post("/test-scenarios/data-files/upload")
+async def upload_scenario_data_file(
+    file: UploadFile = File(...),
+    admin=Depends(require_admin),
+):
+    """Upload a new test data file into the scenario DATA_DIR."""
+    SCENARIO_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    safe_name = Path(file.filename).name
+    dest = SCENARIO_DATA_DIR / safe_name
+    content = await file.read()
+    dest.write_bytes(content)
+    return {"filename": safe_name}
+
 
 
 class RunScenariosRequest(BaseModel):
@@ -823,3 +860,471 @@ def get_test_result(task_id: str, admin=Depends(require_admin)):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
+
+
+# ── Brand library ─────────────────────────────────────────────────────────────
+
+@router.get("/brands")
+def list_brands(
+    q: str = "",
+    business_type: str = "",
+    skip: int = 0,
+    limit: int = 100,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    stmt = select(BrandProfile)
+    if q:
+        stmt = stmt.where(BrandProfile.name.ilike(f"%{q}%"))
+    if business_type:
+        stmt = stmt.where(BrandProfile.business_type == business_type)
+    stmt = stmt.order_by(BrandProfile.business_type, BrandProfile.name).offset(skip).limit(limit)
+    brands = db.exec(stmt).all()
+
+    # Check which have reports
+    brand_ids = [b.id for b in brands]
+    reports = db.exec(
+        select(BrandReport.brand_id, BrandReport.generated_at, BrandReport.model_used)
+        .where(BrandReport.brand_id.in_(brand_ids))
+    ).all()
+    report_map = {r.brand_id: r for r in reports}
+
+    return [
+        {
+            "id": b.id,
+            "name": b.name,
+            "business_type": b.business_type,
+            "region": b.region,
+            "store_count": b.store_count,
+            "avg_price_amap": b.avg_price_amap,
+            "avg_rating_amap": b.avg_rating_amap,
+            "amap_sample_size": b.amap_sample_size,
+            "price_tier": b.price_tier,
+            "is_active": b.is_active,
+            "has_report": b.id in report_map,
+            "report_generated_at": report_map[b.id].generated_at.isoformat() if b.id in report_map else None,
+            "has_profile_json": bool(b.profile_json),
+        }
+        for b in brands
+    ]
+
+
+@router.get("/brands/{brand_id}")
+def get_brand(brand_id: int, admin=Depends(require_admin), db: Session = Depends(get_db)):
+    b = db.get(BrandProfile, brand_id)
+    if not b:
+        raise HTTPException(status_code=404, detail="Brand not found")
+
+    rpt = db.exec(
+        select(BrandReport)
+        .where(BrandReport.brand_id == brand_id)
+        .order_by(BrandReport.generated_at.desc())
+    ).first()
+
+    return {
+        "id": b.id,
+        "name": b.name,
+        "business_type": b.business_type,
+        "region": b.region,
+        "founded_year": b.founded_year,
+        "store_count": b.store_count,
+        "store_count_year": b.store_count_year,
+        "headquarters": b.headquarters,
+        "revenue": b.revenue,
+        "revenue_year": b.revenue_year,
+        "avg_price_min": b.avg_price_min,
+        "avg_price_max": b.avg_price_max,
+        "price_band": b.price_band,
+        "avg_price_amap": b.avg_price_amap,
+        "avg_rating_amap": b.avg_rating_amap,
+        "amap_sample_size": b.amap_sample_size,
+        "price_tier": b.price_tier,
+        "quality_perception": b.quality_perception,
+        "delivery_rate": b.delivery_rate,
+        "main_competitors": b.main_competitors,
+        "user_tags": b.user_tags,
+        "description": b.description,
+        "aliases": b.aliases,
+        "markets": b.markets,
+        "expansion": b.expansion,
+        "is_active": b.is_active,
+        "profile_json": b.profile_json,
+        "report": {
+            "id": rpt.id,
+            "report_json": rpt.report_json,
+            "prompt_template": rpt.prompt_template,
+            "generated_at": rpt.generated_at.isoformat(),
+            "model_used": rpt.model_used,
+        } if rpt else None,
+    }
+
+
+class BrandUpdateRequest(BaseModel):
+    description: str | None = None
+    main_competitors: str | None = None   # JSON array string
+    user_tags: str | None = None          # JSON array string
+    store_count: int | None = None
+    founded_year: int | None = None
+    headquarters: str | None = None
+    price_tier: str | None = None
+    quality_perception: str | None = None
+    expansion: str | None = None
+    is_active: bool | None = None
+
+
+@router.patch("/brands/{brand_id}")
+def update_brand(
+    brand_id: int,
+    req: BrandUpdateRequest,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    b = db.get(BrandProfile, brand_id)
+    if not b:
+        raise HTTPException(status_code=404, detail="Brand not found")
+    for field, val in req.model_dump(exclude_none=True).items():
+        setattr(b, field, val)
+    b.updated_at = datetime.now(timezone.utc)
+    db.add(b)
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/brands/{brand_id}/regen-report")
+async def regen_brand_report(
+    brand_id: int,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    b = db.get(BrandProfile, brand_id)
+    if not b:
+        raise HTTPException(status_code=404, detail="Brand not found")
+
+    # Import here to avoid circular at module load
+    from .scripts.seed_cn_brands import _generate_report
+
+    result = await asyncio.get_event_loop().run_in_executor(None, _generate_report, brand_id)
+    if not result:
+        raise HTTPException(status_code=500, detail="Report generation failed")
+
+    report_json, prompt_template = result
+    rpt = BrandReport(
+        brand_id=brand_id,
+        report_json=report_json,
+        prompt_template=prompt_template,
+        model_used="claude-sonnet-4-6",
+        generated_at=datetime.now(timezone.utc),
+    )
+    db.add(rpt)
+    db.commit()
+    db.refresh(rpt)
+    return {"ok": True, "report_id": rpt.id, "generated_at": rpt.generated_at.isoformat()}
+
+
+# ── Brand prefill (AI) ───────────────────────────────────────────────────────
+
+class PrefillBrandRequest(BaseModel):
+    name: str
+    business_type: str = ""
+
+
+@router.post("/brands/prefill")
+async def prefill_brand(req: PrefillBrandRequest, admin=Depends(require_admin)):
+    """Use Claude Haiku to prefill brand fields from training knowledge."""
+    import anthropic as _anthropic
+    import re as _re
+
+    client = _anthropic.Anthropic()
+    prompt = f"""根据你对「{req.name}」{f'（{req.business_type}品牌）' if req.business_type else ''}的了解，填写以下 JSON 字段。无法确认的填 null，price_tier 和 quality_perception 必须给值。
+
+{{
+  "business_type": "品类，如大众咖啡连锁/火锅连锁/快餐连锁等",
+  "founded_year": 数字或null,
+  "store_count": 估算门店数或null,
+  "headquarters": "总部城市，格式如北京市",
+  "avg_price_min": 客单价下限元或null,
+  "avg_price_max": 客单价上限元或null,
+  "price_tier": "低价/中价/高价",
+  "quality_perception": "低/中/高",
+  "main_competitors": ["竞品1", "竞品2", "竞品3"],
+  "user_tags": ["用户认知标签1", "标签2", "标签3"],
+  "description": "品牌简介2-3句话"
+}}
+
+只返回 JSON，不要任何说明。"""
+
+    try:
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=800,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = msg.content[0].text
+        m = _re.search(r'\{[\s\S]+\}', text)
+        if m:
+            import json as _json
+            return _json.loads(m.group())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(status_code=500, detail="AI 预填失败")
+
+
+# ── Brand create + init ───────────────────────────────────────────────────────
+
+class CreateBrandRequest(BaseModel):
+    name: str
+    business_type: str
+    region: str = "cn"
+    description: str = ""
+    headquarters: str = ""
+    founded_year: Optional[int] = None
+    store_count: Optional[int] = None
+    price_tier: str = ""
+    quality_perception: str = ""
+    main_competitors: str = "[]"
+    user_tags: str = "[]"
+
+
+@router.post("/brands", status_code=201)
+def create_brand(
+    req: CreateBrandRequest,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    existing = db.exec(select(BrandProfile).where(BrandProfile.name == req.name)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"品牌「{req.name}」已存在 (id={existing.id})")
+    b = BrandProfile(
+        name=req.name,
+        business_type=req.business_type,
+        region=req.region,
+        description=req.description,
+        headquarters=req.headquarters,
+        founded_year=req.founded_year,
+        store_count=req.store_count,
+        price_tier=req.price_tier,
+        quality_perception=req.quality_perception,
+        main_competitors=req.main_competitors,
+        user_tags=req.user_tags,
+        is_active=True,
+    )
+    db.add(b)
+    db.commit()
+    db.refresh(b)
+    return {"id": b.id, "name": b.name}
+
+
+# In-memory init status store
+_init_tasks: dict[int, dict] = {}   # brand_id -> {status, step, error}
+
+
+@router.post("/brands/{brand_id}/init")
+def init_brand(brand_id: int, admin=Depends(require_admin), db: Session = Depends(get_db)):
+    b = db.get(BrandProfile, brand_id)
+    if not b:
+        raise HTTPException(status_code=404, detail="Brand not found")
+    if _init_tasks.get(brand_id, {}).get("status") == "running":
+        return {"status": "running"}
+
+    _init_tasks[brand_id] = {"status": "running", "step": "starting", "error": None}
+
+    def _run():
+        import asyncio as _asyncio
+        from .scripts.seed_cn_brands import _amap_sample, _generate_report, _generate_profile_json
+
+        loop = _asyncio.new_event_loop()
+        try:
+            # Step 1: Amap sampling
+            _init_tasks[brand_id]["step"] = "amap"
+            with Session(db.bind) as s:
+                brand = s.get(BrandProfile, brand_id)
+            amap = loop.run_until_complete(_amap_sample(brand.name, brand.headquarters or ""))
+            if amap:
+                with Session(db.bind) as s:
+                    brand = s.get(BrandProfile, brand_id)
+                    brand.avg_price_amap = amap.get("avg_price")
+                    brand.avg_rating_amap = amap.get("avg_rating")
+                    brand.delivery_rate = amap.get("delivery_rate")
+                    brand.amap_sample_size = amap.get("sample_size", 0)
+                    s.add(brand)
+                    s.commit()
+
+            # Step 2: Generate report
+            _init_tasks[brand_id]["step"] = "report"
+            result = _generate_report(brand_id)
+            if result:
+                report_json, prompt_template = result
+                with Session(db.bind) as s:
+                    s.add(BrandReport(
+                        brand_id=brand_id,
+                        report_json=report_json,
+                        prompt_template=prompt_template,
+                        model_used="claude-sonnet-4-6",
+                        generated_at=datetime.now(timezone.utc),
+                    ))
+                    s.commit()
+
+            # Step 3: Generate profile_json
+            _init_tasks[brand_id]["step"] = "profile"
+            profile_json = _generate_profile_json(brand_id)
+            if profile_json:
+                with Session(db.bind) as s:
+                    brand = s.get(BrandProfile, brand_id)
+                    brand.profile_json = profile_json
+                    s.add(brand)
+                    s.commit()
+
+            _init_tasks[brand_id] = {"status": "done", "step": "done", "error": None}
+
+        except Exception as e:
+            _init_tasks[brand_id] = {"status": "error", "step": _init_tasks[brand_id].get("step", ""), "error": str(e)}
+        finally:
+            loop.close()
+
+    threading.Thread(target=_run, daemon=True).start()
+    return {"status": "running"}
+
+
+@router.get("/brands/{brand_id}/init-status")
+def get_init_status(brand_id: int, admin=Depends(require_admin)):
+    task = _init_tasks.get(brand_id)
+    if not task:
+        return {"status": "idle"}
+    return task
+
+
+# ── Test Scenario CRUD ────────────────────────────────────────────────────────
+
+class CreateScenarioRequest(BaseModel):
+    sid: str
+    name: str
+    business_type: str = ""
+    shop_name: str = ""
+    shop_category: str = ""
+    shop_address: str = ""
+    csv_name: str = ""
+    q1: str = ""
+    q2: str = ""
+    q3: str = ""
+    must: list[str] = []
+    red_flags: list[str] = []
+
+class UpdateScenarioRequest(BaseModel):
+    name: Optional[str] = None
+    business_type: Optional[str] = None
+    shop_name: Optional[str] = None
+    shop_category: Optional[str] = None
+    shop_address: Optional[str] = None
+    csv_name: Optional[str] = None
+    q1: Optional[str] = None
+    q2: Optional[str] = None
+    q3: Optional[str] = None
+    must: Optional[list[str]] = None
+    red_flags: Optional[list[str]] = None
+    is_active: Optional[bool] = None
+
+
+def _scenario_to_dict(s: TestScenario) -> dict:
+    shop = json.loads(s.shop_json) if s.shop_json else {}
+    return {
+        "id": s.id,
+        "sid": s.sid,
+        "name": s.name,
+        "business_type": s.business_type,
+        "shop_name": shop.get("name", ""),
+        "shop_category": shop.get("category", ""),
+        "shop_address": shop.get("address", ""),
+        "csv_name": s.csv_name,
+        "q1": s.q1,
+        "q2": s.q2,
+        "q3": s.q3,
+        "must": json.loads(s.must_json) if s.must_json else [],
+        "red_flags": json.loads(s.red_flags_json) if s.red_flags_json else [],
+        "is_active": s.is_active,
+        "created_at": s.created_at.isoformat(),
+        "updated_at": s.updated_at.isoformat(),
+    }
+
+
+@router.get("/test-scenarios")
+def list_test_scenarios(db: Session = Depends(get_db), admin=Depends(require_admin)):
+    rows = db.exec(select(TestScenario).order_by(TestScenario.sid)).all()
+    return [_scenario_to_dict(r) for r in rows]
+
+
+@router.post("/test-scenarios")
+def create_test_scenario(req: CreateScenarioRequest, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    existing = db.exec(select(TestScenario).where(TestScenario.sid == req.sid)).first()
+    if existing:
+        raise HTTPException(400, f"sid '{req.sid}' already exists")
+    shop = {"name": req.shop_name, "category": req.shop_category, "address": req.shop_address}
+    row = TestScenario(
+        sid=req.sid,
+        name=req.name,
+        business_type=req.business_type,
+        shop_json=json.dumps(shop, ensure_ascii=False),
+        csv_name=req.csv_name,
+        q1=req.q1,
+        q2=req.q2,
+        q3=req.q3,
+        must_json=json.dumps(req.must, ensure_ascii=False),
+        red_flags_json=json.dumps(req.red_flags, ensure_ascii=False),
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return _scenario_to_dict(row)
+
+
+@router.patch("/test-scenarios/{scenario_id}")
+def update_test_scenario(scenario_id: int, req: UpdateScenarioRequest,
+                          db: Session = Depends(get_db), admin=Depends(require_admin)):
+    row = db.get(TestScenario, scenario_id)
+    if not row:
+        raise HTTPException(404, "scenario not found")
+
+    if req.name is not None:
+        row.name = req.name
+    if req.business_type is not None:
+        row.business_type = req.business_type
+    if req.csv_name is not None:
+        row.csv_name = req.csv_name
+    if req.q1 is not None:
+        row.q1 = req.q1
+    if req.q2 is not None:
+        row.q2 = req.q2
+    if req.q3 is not None:
+        row.q3 = req.q3
+    if req.must is not None:
+        row.must_json = json.dumps(req.must, ensure_ascii=False)
+    if req.red_flags is not None:
+        row.red_flags_json = json.dumps(req.red_flags, ensure_ascii=False)
+    if req.is_active is not None:
+        row.is_active = req.is_active
+
+    # Update shop_json if any shop field provided
+    if req.shop_name is not None or req.shop_category is not None or req.shop_address is not None:
+        shop = json.loads(row.shop_json) if row.shop_json else {}
+        if req.shop_name is not None:
+            shop["name"] = req.shop_name
+        if req.shop_category is not None:
+            shop["category"] = req.shop_category
+        if req.shop_address is not None:
+            shop["address"] = req.shop_address
+        row.shop_json = json.dumps(shop, ensure_ascii=False)
+
+    row.updated_at = datetime.utcnow()
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return _scenario_to_dict(row)
+
+
+@router.delete("/test-scenarios/{scenario_id}")
+def delete_test_scenario(scenario_id: int, db: Session = Depends(get_db), admin=Depends(require_admin)):
+    row = db.get(TestScenario, scenario_id)
+    if not row:
+        raise HTTPException(404, "scenario not found")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}

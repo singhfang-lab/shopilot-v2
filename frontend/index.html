@@ -1105,6 +1105,103 @@
     }
     .kb-detail-del:hover { color: #ef4444; opacity: 1; }
 
+    /* ── Merchant KB folder modal ───────────────────── */
+    #mkb-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding-top: 40px; z-index: 500;
+    }
+    #mkb-modal-overlay.hidden { display: none; }
+    #mkb-modal {
+      background: #fff;
+      border-radius: 14px;
+      width: 760px; max-width: 96vw;
+      max-height: calc(100vh - 80px);
+      display: flex; flex-direction: column;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+    #mkb-modal-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; background: #fff;
+    }
+    #mkb-modal-title { font-size: 15px; font-weight: 700; flex: 1; color: var(--text); }
+    #mkb-modal-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 20px; color: var(--text-muted); line-height: 1;
+      padding: 4px 8px; border-radius: 6px;
+    }
+    #mkb-modal-close:hover { background: var(--surface); }
+    /* Upload zone inside modal */
+    #mkb-upload-zone {
+      border: 2px dashed var(--border); border-radius: 10px;
+      padding: 20px 16px; text-align: center;
+      margin: 14px 16px 0; cursor: pointer; transition: all 0.15s;
+      background: var(--surface);
+    }
+    #mkb-upload-zone:hover, #mkb-upload-zone.dragover {
+      border-color: var(--accent); background: #eff6ff;
+    }
+    #mkb-upload-zone .uz-icon { font-size: 22px; margin-bottom: 4px; }
+    #mkb-upload-zone .uz-text { font-size: 13px; color: var(--text-muted); }
+    #mkb-upload-zone .uz-btn {
+      margin-top: 8px; display: inline-flex; gap: 8px;
+    }
+    /* Toolbar */
+    #mkb-toolbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px 8px; flex-shrink: 0; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+    }
+    #mkb-breadcrumb { flex: 1; display: flex; align-items: center; gap: 4px; font-size: 13px; flex-wrap: wrap; min-width: 0; }
+    .mkb-bc-item { color: var(--accent); cursor: pointer; }
+    .mkb-bc-item:hover { text-decoration: underline; }
+    .mkb-bc-sep { color: var(--text-muted); }
+    #mkb-stats { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+    /* File view */
+    #mkb-file-view { overflow-y: auto; flex: 1; padding: 8px 4px 16px; min-height: 140px; }
+    /* List rows — reuse admin .kb-row style */
+    .mkb-row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.1s; position: relative; }
+    .mkb-row:hover { background: var(--surface); }
+    .mkb-row:hover .mkb-actions { opacity: 1; }
+    .mkb-chevron { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; width: 12px; flex-shrink: 0; }
+    .mkb-chevron.open { transform: rotate(90deg); }
+    .mkb-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+    .mkb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mkb-meta { font-size: 11px; color: var(--text-muted); white-space: nowrap; margin-right: 8px; }
+    .mkb-actions { opacity: 0; display: flex; gap: 4px; flex-shrink: 0; transition: opacity 0.15s; }
+    .mkb-actions button { padding: 3px 8px; font-size: 11px; border-radius: 5px; border: 1px solid var(--border); background: #fff; color: var(--text-muted); cursor: pointer; font-family: inherit; }
+    .mkb-actions button:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
+    .mkb-actions button.danger:hover { background: #fee2e2; color: #ef4444; border-color: #ef4444; }
+    .mkb-indent { padding-left: 28px; }
+    .mkb-sdot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    /* Grid */
+    .mkb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; padding: 16px; }
+    .mkb-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 8px 12px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.15s; position: relative; background: #fff; }
+    .mkb-card:hover { border-color: var(--accent); background: #f0f6ff; }
+    .mkb-card:hover .mkb-card-actions { opacity: 1; }
+    .mkb-card-icon { font-size: 34px; line-height: 1; }
+    .mkb-card-name { font-size: 11px; text-align: center; word-break: break-all; color: var(--text); line-height: 1.4; max-height: 32px; overflow: hidden; }
+    .mkb-card-actions { position: absolute; top: 4px; right: 4px; opacity: 0; display: flex; gap: 2px; transition: opacity 0.15s; }
+    .mkb-card-actions button { padding: 2px 5px; font-size: 10px; border-radius: 4px; border: 1px solid var(--border); background: #fff; color: var(--text-muted); cursor: pointer; }
+    .mkb-card-actions button:hover { background: #fee2e2; color: #ef4444; border-color: #ef4444; }
+    /* Folder picker */
+    #mkb-folder-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35); z-index: 600;
+      align-items: center; justify-content: center;
+    }
+    #mkb-folder-modal-inner {
+      background: #fff; border-radius: 12px;
+      padding: 20px; width: 340px; max-width: 92vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+    .mkb-folder-opt { padding: 8px 12px; cursor: pointer; font-size: 13px; border-radius: 6px; transition: background 0.1s; }
+    .mkb-folder-opt:hover { background: var(--surface); }
+    .mkb-folder-opt.selected { background: #eff6ff; color: var(--accent); font-weight: 600; }
+
     /* ── Auth modal ──────────────────────────────────── */
     #auth-modal-overlay {
       position: fixed; inset: 0;
@@ -1373,6 +1470,56 @@
   </div>
 </div>
 
+<!-- Merchant KB folder modal -->
+<div id="mkb-modal-overlay" class="hidden">
+  <div id="mkb-modal">
+    <div id="mkb-modal-header">
+      <div id="mkb-modal-title">商家知识库</div>
+      <button id="mkb-modal-close">×</button>
+    </div>
+    <!-- Upload zone -->
+    <div id="mkb-upload-zone">
+      <input type="file" id="mkb-file-input" multiple accept=".pdf,.xlsx,.xls,.csv,.txt,.md,.png,.jpg,.jpeg,.webp" style="display:none" />
+      <input type="file" id="mkb-folder-input" multiple accept=".pdf,.xlsx,.xls,.csv,.txt,.md" style="display:none" webkitdirectory />
+      <div class="uz-icon">📁</div>
+      <div class="uz-text">拖拽文件或文件夹到此处，或点击上传</div>
+      <div class="uz-btn">
+        <button onclick="event.stopPropagation();document.getElementById('mkb-file-input').click()" style="padding:5px 14px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--text);">选择文件</button>
+        <button onclick="event.stopPropagation();document.getElementById('mkb-folder-input').click()" style="padding:5px 14px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--text);">选择文件夹</button>
+      </div>
+    </div>
+    <div id="mkb-upload-status" style="min-height:18px;font-size:12px;color:var(--text-muted);padding:4px 20px 0;flex-shrink:0;"></div>
+    <!-- Toolbar: breadcrumb + stats + new folder + view toggle -->
+    <div id="mkb-toolbar">
+      <div id="mkb-breadcrumb"></div>
+      <span id="mkb-stats"></span>
+      <button onclick="mkbNewFolder()" style="padding:4px 10px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--text-muted);white-space:nowrap;">+ 新建目录</button>
+      <button onclick="loadMerchantKB().then(()=>_mkbRender())" style="padding:4px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--text-muted);" title="刷新">↻</button>
+      <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <button id="mkb-view-list-btn" onclick="mkbSetView('list')" style="border:none;border-radius:0;padding:4px 9px;font-size:13px;cursor:pointer;background:var(--surface);color:var(--text-muted);" title="列表">☰</button>
+        <button id="mkb-view-grid-btn" onclick="mkbSetView('grid')" style="border:none;border-radius:0;padding:4px 9px;font-size:13px;cursor:pointer;background:var(--accent);color:#fff;" title="宫格">⊞</button>
+      </div>
+    </div>
+    <div id="mkb-file-view"></div>
+  </div>
+</div>
+
+<!-- Merchant KB folder picker (shown during upload) -->
+<div id="mkb-folder-modal">
+  <div id="mkb-folder-modal-inner">
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px;">选择上传目录</div>
+    <div id="mkb-folder-list" style="max-height:200px;overflow-y:auto;margin-bottom:10px;border:1px solid var(--border);border-radius:8px;padding:4px;"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input id="mkb-new-folder-input" placeholder="新建目录名" style="flex:1;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;outline:none;" />
+      <button onclick="mkbNewFolderInPicker()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;white-space:nowrap;">+ 新建</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button onclick="mkbFolderPickerClose()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">取消</button>
+      <button onclick="mkbFolderPickerConfirm()" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:600;">上传到此目录</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── Config ───────────────────────────────────────
   const API = window.location.hostname === 'localhost' ? 'http://localhost:8081' : '';
@@ -1508,6 +1655,10 @@
   }
 
   async function restoreConversation(convId) {
+    // Abort any in-flight stream before switching — prevents the old stream from
+    // writing into the new conversation's UI after navigation.
+    if (isStreaming && _abortController) _abortController.abort();
+    _preCreatePromise = null;
     try {
       const res = await fetch(`${API}/conversations/${convId}`, { credentials: 'include' });
       if (!res.ok) return;
@@ -1564,11 +1715,6 @@
     if (!container) return;
     container.innerHTML = '';
     const merchant = currentUser?.merchant;
-    if (!merchant && !_merchantKBItems.length) {
-      container.innerHTML = '<div style="padding:5px 8px;font-size:12px;color:var(--text-muted)">暂无文件</div>';
-      return;
-    }
-    const totalChunks = _merchantKBItems.reduce((s, i) => s + (i.chunk_count || 0), 0);
     const brandName = merchant?.name || '商家简报';
     // Brief entry
     const briefEl = document.createElement('div');
@@ -1576,16 +1722,6 @@
     briefEl.innerHTML = `<span class="kb-status-dot indexed"></span><span class="kb-summary-text">${escapeHtml(brandName)} · 品牌简报</span><span class="kb-summary-arrow">›</span>`;
     briefEl.addEventListener('click', () => openBriefModal());
     container.appendChild(briefEl);
-    // Uploaded files summary (if any uploads beyond the generated brief)
-    const uploads = _merchantKBItems.filter(i => i.source_type === 'upload');
-    if (uploads.length) {
-      const uploadEl = document.createElement('div');
-      uploadEl.className = 'kb-summary';
-      const uploadChunks = uploads.reduce((s, i) => s + (i.chunk_count || 0), 0);
-      uploadEl.innerHTML = `<span class="kb-status-dot indexed"></span><span class="kb-summary-text">上传文件 ${uploads.length} 个 · ${uploadChunks} 条</span><span class="kb-summary-arrow">›</span>`;
-      uploadEl.addEventListener('click', () => openKBModal('merchant'));
-      container.appendChild(uploadEl);
-    }
   }
 
   async function loadPlatformKB() {
@@ -1891,13 +2027,13 @@
 
 
   function openKBModal(type) {
-    const items = type === 'platform' ? _platformKBItems : _merchantKBItems.filter(i => i.source_type === 'upload');
-    const title = type === 'platform' ? '平台知识库' : '上传文件';
-    document.getElementById('kb-modal-title').textContent = title;
+    // platform KB only — merchant KB now uses openMerchantKBModal()
+    const items = _platformKBItems;
+    document.getElementById('kb-modal-title').textContent = '平台知识库';
     const body = document.getElementById('kb-modal-body');
     body.innerHTML = '';
     if (!items.length) {
-      body.innerHTML = '<div style="color:var(--text-muted);font-size:13px">暂无文件</div>';
+      body.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px;">暂无文件</div>';
     } else {
       items.forEach(item => {
         const row = document.createElement('div');
@@ -1905,18 +2041,7 @@
         const dot = `<span class="kb-status-dot ${item.status}" style="flex-shrink:0"></span>`;
         const name = `<span class="kb-detail-name">${escapeHtml(item.original_name)}</span>`;
         const meta = `<span class="kb-detail-meta">${item.chunk_count || 0} 条</span>`;
-        const del = type === 'merchant'
-          ? `<button class="kb-detail-del" title="删除" data-id="${item.id}">✕</button>` : '';
-        row.innerHTML = `${dot}${name}${meta}${del}`;
-        if (type === 'merchant') {
-          row.querySelector('.kb-detail-del')?.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            if (!confirm(`删除「${item.original_name}」？`)) return;
-            await fetch(`${API}/kb/documents/${item.id}`, { method: 'DELETE', credentials: 'include' });
-            document.getElementById('kb-modal-overlay').classList.add('hidden');
-            loadMerchantKB();
-          });
-        }
+        row.innerHTML = `${dot}${name}${meta}`;
         body.appendChild(row);
       });
     }
@@ -1931,10 +2056,332 @@
       document.getElementById('kb-modal-overlay').classList.add('hidden');
   });
 
-  async function persistTurn(userMsg, assistantMsg, canvasEvts = []) {
+  // ── Merchant KB folder tree ───────────────────────────────────────────────
+
+  let _mkbPath = [];
+  let _mkbExpanded = {};
+  let _mkbView = 'grid';   // 'list' | 'grid'
+  let _mkbPendingFiles = null;
+  let _mkbSelectedFolder = '';
+
+  function _mkbEsc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _mkbDocs() { return _merchantKBItems.filter(i => i.source_type === 'upload'); }
+
+  function _mkbBuildTree(docs, pathPrefix) {
+    const folders = {}, files = [];
+    for (const doc of docs) {
+      const rel = pathPrefix ? doc.original_name.slice(pathPrefix.length + 1) : doc.original_name;
+      const slash = rel.indexOf('/');
+      if (slash === -1) { if (rel !== '.keep') files.push(doc); }
+      else { const f = rel.slice(0, slash); if (!folders[f]) folders[f] = []; folders[f].push(doc); }
+    }
+    return { folders, files };
+  }
+
+  function _mkbDocsUnder(prefix) {
+    return _mkbDocs().filter(d =>
+      prefix === '' ? true : d.original_name.startsWith(prefix + '/') || d.original_name === prefix
+    );
+  }
+
+  function _mkbSdot(status) {
+    const c = status==='indexed'?'#22c55e':status==='processing'?'#f59e0b':'#ef4444';
+    return `<span class="mkb-sdot" style="background:${c}" title="${status}"></span>`;
+  }
+
+  function _mkbRenderStats() {
+    const docs = _mkbDocs().filter(d => !d.original_name.endsWith('/.keep'));
+    const chunks = docs.reduce((a,d)=>a+(d.chunk_count||0),0);
+    const proc = docs.filter(d=>d.status==='processing').length;
+    document.getElementById('mkb-stats').textContent =
+      `${docs.length} 个文件 · ${chunks} chunks${proc?' · '+proc+' 个索引中':''}`;
+  }
+
+  function _mkbRenderBreadcrumb() {
+    const el = document.getElementById('mkb-breadcrumb');
+    const parts = [{label:'全部文件',path:[]}, ..._mkbPath.map((s,i)=>({label:s,path:_mkbPath.slice(0,i+1)}))];
+    el.innerHTML = parts.map((p,i) => {
+      const last = i===parts.length-1;
+      return last
+        ? `<span style="color:var(--text);font-weight:600;">${_mkbEsc(p.label)}</span>`
+        : `<span class="mkb-bc-item" onclick="mkbNavTo(${JSON.stringify(p.path)})">${_mkbEsc(p.label)}</span><span class="mkb-bc-sep"> / </span>`;
+    }).join('');
+  }
+
+  function mkbNavTo(pathArr) { _mkbPath=pathArr; _mkbRender(); }
+
+  function mkbSetView(v) {
+    _mkbView = v;
+    const lb = document.getElementById('mkb-view-list-btn');
+    const gb = document.getElementById('mkb-view-grid-btn');
+    if (lb && gb) {
+      lb.style.background = v==='list' ? 'var(--accent)' : 'var(--surface)';
+      lb.style.color      = v==='list' ? '#fff' : 'var(--text-muted)';
+      gb.style.background = v==='grid' ? 'var(--accent)' : 'var(--surface)';
+      gb.style.color      = v==='grid' ? '#fff' : 'var(--text-muted)';
+    }
+    _mkbRender();
+  }
+
+  // ── List view ──────────────────────────────────────
+
+  function _mkbListInner(folders, files, prefix) {
+    let html = '';
+    for (const [fname, fdocs] of Object.entries(folders).sort()) {
+      const fullPath = prefix ? `${prefix}/${fname}` : fname;
+      const isOpen = _mkbExpanded[fullPath];
+      const count = fdocs.filter(d=>!d.original_name.endsWith('/.keep')).length;
+      html += `
+        <div class="mkb-row" onclick="mkbToggleFolder('${_mkbEsc(fullPath)}')">
+          <span class="mkb-chevron ${isOpen?'open':''}">▶</span>
+          <span class="mkb-icon">📁</span>
+          <span class="mkb-name">${_mkbEsc(fname)}</span>
+          <span class="mkb-meta">${count} 个文件</span>
+          <div class="mkb-actions" onclick="event.stopPropagation()">
+            <button onclick="mkbRenameFolder('${_mkbEsc(fullPath)}','${_mkbEsc(fname)}');event.stopPropagation()">改名</button>
+            <button class="danger" onclick="mkbDeleteFolder('${_mkbEsc(fullPath)}','${_mkbEsc(fname)}');event.stopPropagation()">删除</button>
+          </div>
+        </div>`;
+      if (isOpen) {
+        const sub = _mkbBuildTree(fdocs, fullPath);
+        html += `<div class="mkb-indent">${_mkbListInner(sub.folders, sub.files, fullPath)}</div>`;
+      }
+    }
+    for (const doc of files.sort((a,b)=>a.original_name.localeCompare(b.original_name))) {
+      const fname = doc.original_name.split('/').pop();
+      html += `
+        <div class="mkb-row">
+          <span style="width:12px;flex-shrink:0;"></span>
+          <span class="mkb-icon">📄</span>
+          <span class="mkb-name">${_mkbEsc(fname)}</span>
+          ${_mkbSdot(doc.status)}
+          <span class="mkb-meta">${doc.chunk_count||0} chunks</span>
+          <div class="mkb-actions">
+            <button onclick="mkbRenameFile(${doc.id},'${_mkbEsc(fname)}')">改名</button>
+            <button class="danger" onclick="mkbDeleteFile(${doc.id},'${_mkbEsc(fname)}')">删除</button>
+          </div>
+        </div>`;
+    }
+    return html;
+  }
+
+  // ── Grid view ──────────────────────────────────────
+
+  function _mkbGrid(container, folders, files, prefix) {
+    let html = '<div class="mkb-grid">';
+    for (const [fname, fdocs] of Object.entries(folders).sort()) {
+      const fullPath = prefix ? `${prefix}/${fname}` : fname;
+      const newPath = JSON.stringify([..._mkbPath, fname]).replace(/'/g,"&#39;");
+      const count = fdocs.filter(d=>!d.original_name.endsWith('/.keep')).length;
+      html += `
+        <div class="mkb-card mkb-folder-card" data-path='${newPath}'>
+          <div class="mkb-card-actions" onclick="event.stopPropagation()">
+            <button onclick="mkbRenameFolder('${_mkbEsc(fullPath)}','${_mkbEsc(fname)}');event.stopPropagation()">✏</button>
+            <button onclick="mkbDeleteFolder('${_mkbEsc(fullPath)}','${_mkbEsc(fname)}');event.stopPropagation()">✕</button>
+          </div>
+          <div class="mkb-card-icon">📁</div>
+          <div class="mkb-card-name" title="${_mkbEsc(fname)}">${_mkbEsc(fname)}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${count} 个文件</div>
+        </div>`;
+    }
+    for (const doc of files.sort((a,b)=>a.original_name.localeCompare(b.original_name))) {
+      const fname = doc.original_name.split('/').pop();
+      const ext = fname.split('.').pop().toLowerCase();
+      const icon = ext==='pdf'?'📕':ext==='md'?'📝':(ext==='xlsx'||ext==='xls'||ext==='csv')?'📊':'📄';
+      html += `
+        <div class="mkb-card">
+          <div class="mkb-card-actions" onclick="event.stopPropagation()">
+            <button onclick="mkbRenameFile(${doc.id},'${_mkbEsc(fname)}')">✏</button>
+            <button onclick="mkbDeleteFile(${doc.id},'${_mkbEsc(fname)}')">✕</button>
+          </div>
+          <div class="mkb-card-icon">${icon}</div>
+          <div class="mkb-card-name" title="${_mkbEsc(fname)}">${_mkbEsc(fname)}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${doc.chunk_count||0} chunks ${_mkbSdot(doc.status)}</div>
+        </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+    container.querySelectorAll('.mkb-folder-card').forEach(el => {
+      el.addEventListener('click', () => { _mkbPath = JSON.parse(el.dataset.path); _mkbRender(); });
+    });
+  }
+
+  function _mkbRender() {
+    const container = document.getElementById('mkb-file-view');
+    if (!container) return;
+    const prefix = _mkbPath.join('/');
+    const scoped = _mkbDocsUnder(prefix);
+    const { folders, files } = _mkbBuildTree(scoped, prefix);
+    _mkbRenderBreadcrumb();
+    _mkbRenderStats();
+    if (!Object.keys(folders).length && !files.length) {
+      container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:13px;">暂无文件，点击上方上传</div>';
+      return;
+    }
+    if (_mkbView === 'grid') {
+      _mkbGrid(container, folders, files, prefix);
+    } else {
+      container.innerHTML = `<div style="padding:4px 8px;">${_mkbListInner(folders, files, prefix)}</div>`;
+    }
+  }
+
+  function mkbToggleFolder(fullPath) { _mkbExpanded[fullPath] = !_mkbExpanded[fullPath]; _mkbRender(); }
+
+  async function mkbDeleteFile(id, fname) {
+    if (!confirm(`删除「${fname}」？`)) return;
+    await fetch(`${API}/kb/documents/${id}`, { method:'DELETE', credentials:'include' });
+    await loadMerchantKB(); _mkbRender();
+  }
+
+  async function mkbRenameFile(id, currentName) {
+    const n = prompt('新文件名：', currentName);
+    if (!n || n===currentName) return;
+    await fetch(`${API}/kb/documents/${id}/rename`, {
+      method:'PATCH', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({new_name:n}),
+    });
+    await loadMerchantKB(); _mkbRender();
+  }
+
+  async function mkbDeleteFolder(fullPath, fname) {
+    if (!confirm(`删除目录「${fname}」及其所有文件？`)) return;
+    await fetch(`${API}/kb/folders?folder_path=${encodeURIComponent(fullPath)}`, { method:'DELETE', credentials:'include' });
+    delete _mkbExpanded[fullPath];
+    await loadMerchantKB(); _mkbRender();
+  }
+
+  async function mkbRenameFolder(fullPath, currentName) {
+    const n = prompt('新目录名：', currentName);
+    if (!n || n===currentName) return;
+    const fd = new FormData(); fd.append('old_path', fullPath); fd.append('new_name', n);
+    await fetch(`${API}/kb/folders/rename`, { method:'POST', credentials:'include', body:fd });
+    await loadMerchantKB(); _mkbRender();
+  }
+
+  async function mkbNewFolder() {
+    const n = prompt('新建目录名：');
+    if (!n) return;
+    const prefix = _mkbPath.join('/');
+    await fetch(`${API}/kb/folders`, {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({folder_path: prefix ? `${prefix}/${n}` : n}),
+    });
+    await loadMerchantKB(); _mkbRender();
+  }
+
+  // ── Upload with folder picker ─────────────────────
+
+  function _mkbGetFolders() {
+    const s = new Set();
+    for (const d of _mkbDocs()) {
+      const p = d.original_name.split('/');
+      if (p.length > 1) s.add(p.slice(0,-1).join('/'));
+    }
+    return Array.from(s).sort();
+  }
+
+  function _mkbRenderPicker() {
+    const list = document.getElementById('mkb-folder-list');
+    const folders = _mkbGetFolders();
+    const opts = [['', '📂 根目录'], ...folders.map(f=>[f, '📁 '+f])];
+    list.innerHTML = opts.map(([val, label]) =>
+      `<div class="mkb-folder-opt${_mkbSelectedFolder===val?' selected':''}" onclick="mkbFolderPickerSelect(this,'${_mkbEsc(val)}')">${_mkbEsc(label)}</div>`
+    ).join('');
+  }
+
+  function mkbShowFolderPicker(files) {
+    _mkbPendingFiles = files;
+    _mkbSelectedFolder = _mkbPath.join('/');
+    _mkbRenderPicker();
+    document.getElementById('mkb-new-folder-input').value = '';
+    document.getElementById('mkb-folder-modal').style.display = 'flex';
+  }
+
+  function mkbFolderPickerSelect(el, folder) {
+    _mkbSelectedFolder = folder;
+    document.querySelectorAll('#mkb-folder-list .mkb-folder-opt').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  async function mkbNewFolderInPicker() {
+    const n = document.getElementById('mkb-new-folder-input').value.trim();
+    if (!n) return;
+    const fullPath = _mkbSelectedFolder ? `${_mkbSelectedFolder}/${n}` : n;
+    await fetch(`${API}/kb/folders`, {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({folder_path: fullPath}),
+    });
+    await loadMerchantKB();
+    _mkbSelectedFolder = fullPath;
+    _mkbRenderPicker();
+    document.getElementById('mkb-new-folder-input').value = '';
+  }
+
+  function mkbFolderPickerClose() {
+    document.getElementById('mkb-folder-modal').style.display = 'none';
+    _mkbPendingFiles = null;
+  }
+
+  async function mkbFolderPickerConfirm() {
+    const files = _mkbPendingFiles;
+    mkbFolderPickerClose();
+    if (!files) return;
+    const status = document.getElementById('mkb-upload-status');
+    status.textContent = `上传中 (0/${files.length})...`;
+    let done = 0;
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append('file', file);
+      if (_mkbSelectedFolder) fd.append('folder', _mkbSelectedFolder);
+      try {
+        const res = await fetch(`${API}/upload`, { method:'POST', credentials:'include', body:fd });
+        if (!res.ok) console.error('upload failed', await res.text());
+      } catch(e) { console.error(e); }
+      done++;
+      status.textContent = `上传中 (${done}/${files.length})...`;
+    }
+    status.textContent = `✓ 已上传 ${done} 个文件`;
+    setTimeout(()=>{ status.textContent=''; }, 3000);
+    await loadMerchantKB(); _mkbRender();
+  }
+
+  function openMerchantKBModal() {
+    _mkbPath = [];
+    _mkbRender();
+    document.getElementById('mkb-modal-overlay').classList.remove('hidden');
+  }
+
+  document.getElementById('mkb-modal-overlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('mkb-modal-overlay'))
+      document.getElementById('mkb-modal-overlay').classList.add('hidden');
+  });
+  document.getElementById('mkb-modal-close').addEventListener('click', () => {
+    document.getElementById('mkb-modal-overlay').classList.add('hidden');
+  });
+  (() => {
+    const zone  = document.getElementById('mkb-upload-zone');
+    const fi    = document.getElementById('mkb-file-input');
+    const foli  = document.getElementById('mkb-folder-input');
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault(); zone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) mkbShowFolderPicker(e.dataTransfer.files);
+    });
+    fi.addEventListener('change', () => { if (fi.files.length) { mkbShowFolderPicker(fi.files); fi.value=''; } });
+    foli.addEventListener('change', () => { if (foli.files.length) { mkbShowFolderPicker(foli.files); foli.value=''; } });
+  })();
+
+  // convIdAtStart: snapshot taken when sendMessage began — prevents cross-conversation pollution
+  // if user switched away mid-stream, we still save to the original conversation but don't hijack the UI
+  async function persistTurn(userMsg, assistantMsg, canvasEvts = [], convIdAtStart) {
     if (!currentUser) return;
+    let savedConvId = convIdAtStart;
     try {
-      if (!currentConvId) {
+      if (!savedConvId) {
         const res = await fetch(`${API}/conversations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1943,10 +2390,13 @@
         });
         if (!res.ok) return;
         const data = await res.json();
-        currentConvId = data.id;
-        loadConversations();
+        savedConvId = data.id;
+        // Only update global currentConvId if the user hasn't switched away
+        if (currentConvId === convIdAtStart) {
+          currentConvId = savedConvId;
+        }
       }
-      await fetch(`${API}/conversations/${currentConvId}/messages`, {
+      await fetch(`${API}/conversations/${savedConvId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -2027,7 +2477,9 @@
   // ── New conversation button ───────────────────────
   function _initNewConvBtn() {
     document.getElementById('new-conv-btn').addEventListener('click', () => {
+      if (isStreaming && _abortController) _abortController.abort();
       currentConvId = null;
+      _preCreatePromise = null;
       messagesEl.innerHTML = '';
       chatHistory = [];
       historySummary = '';
@@ -2040,28 +2492,8 @@
 
   // ── Sidebar KB upload trigger ─────────────────────
   function _initKbUploadTrigger() {
-    const kbFileInput = document.createElement('input');
-    kbFileInput.type = 'file';
-    kbFileInput.multiple = true;
-    kbFileInput.accept = '.xlsx,.xls,.csv,.pdf,.txt,.md,.docx,.doc';
-    kbFileInput.style.display = 'none';
-    document.body.appendChild(kbFileInput);
-
-    document.getElementById('kb-upload-trigger').addEventListener('click', () => kbFileInput.click());
-
-    kbFileInput.addEventListener('change', async () => {
-      const files = Array.from(kbFileInput.files);
-      kbFileInput.value = '';
-      if (!files.length) return;
-      for (const f of files) {
-        const fd = new FormData();
-        fd.append('file', f);
-        try {
-          await fetch(`${API}/upload`, { method: 'POST', body: fd, credentials: 'include' });
-        } catch {}
-      }
-      loadMerchantKB();
-    });
+    // "+" button opens the KB folder modal, which has the upload zone inside
+    document.getElementById('kb-upload-trigger').addEventListener('click', () => openMerchantKBModal());
   }
 
   function _setStopMode(on) {
@@ -2820,10 +3252,41 @@
     messagesEl.classList.remove('hidden');
   }
 
-  // ── Input auto-resize ─────────────────────────────
+  // ── Input auto-resize + eager conversation pre-creation ──────────────────────
+  // As soon as the user starts typing in a blank session, create the conversation
+  // in the backend so currentConvId is set before sendMessage runs.
+  // This eliminates the race where the user navigates away between send and persist.
+  // Promise that resolves to the pre-created conversation id (or null if failed).
+  // sendMessage awaits this before snapshotting convIdAtStart.
+  let _preCreatePromise = null;
+
+  function _ensureConvId() {
+    if (currentConvId) return Promise.resolve(currentConvId);
+    if (_preCreatePromise) return _preCreatePromise;
+    _preCreatePromise = fetch(`${API}/conversations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ merchant_id: currentUser?.merchant?.id || null }),
+    }).then(r => r.ok ? r.json() : null).then(data => {
+      if (data) {
+        if (!currentConvId) currentConvId = data.id;
+        loadConversations().then(() => {
+          document.querySelectorAll('.conv-item').forEach(el => {
+            el.classList.toggle('active', +el.dataset.convId === data.id);
+          });
+        });
+        return data.id;
+      }
+      return null;
+    }).catch(() => null).finally(() => { _preCreatePromise = null; });
+    return _preCreatePromise;
+  }
+
   msgInput.addEventListener('input', () => {
     msgInput.style.height = 'auto';
     msgInput.style.height = Math.min(msgInput.scrollHeight, 130) + 'px';
+    if (!currentConvId && msgInput.value.trim()) _ensureConvId();
   });
   msgInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _onSendClick(); }
@@ -3036,6 +3499,11 @@
       if (_abortController) _abortController.abort();
       return;
     }
+    // Ensure a real conversation ID exists before we start — waits for any
+    // in-flight pre-create, or creates one now. Snapshot it so mid-stream
+    // navigation can't corrupt this turn's persistence.
+    await _ensureConvId();
+    const convIdAtStart = currentConvId;
     isStreaming = true;
     _abortController = new AbortController();
     _setStopMode(true);
@@ -3172,7 +3640,7 @@
       if (fullText) {
         chatHistory.push({ role: 'assistant', content: fullText });
         maybeSummarize();
-        persistTurn(inputText, fullText, canvasEvents);
+        persistTurn(inputText, fullText, canvasEvents, convIdAtStart);
       }
     } catch(err) {
       if (err.name === 'AbortError') {

@@ -812,6 +812,7 @@ def _build_rag_chunks(merged: list[dict], filename: str) -> list[str]:
 async def upload(
     file: UploadFile = File(...),
     shop_id: str = Form(""),
+    folder: str = Form(""),
     current_user=Depends(get_current_user_optional),
     db: Session = Depends(get_db),
 ):
@@ -824,7 +825,8 @@ async def upload(
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     content = await file.read()
-    original_name = file.filename
+    bare_name = Path(file.filename).name
+    original_name = f"{folder.strip('/')}/{bare_name}" if folder.strip("/") else bare_name
 
     # Dedup: check if same content already uploaded by this merchant
     import hashlib
@@ -844,10 +846,10 @@ async def upload(
                 "duplicate": True,
             }
 
-    save_path = upload_dir / original_name
+    save_path = upload_dir / bare_name
     counter = 1
     while save_path.exists():
-        stem = Path(original_name).stem
+        stem = Path(bare_name).stem
         save_path = upload_dir / f"{stem}_{counter}{suffix}"
         counter += 1
 

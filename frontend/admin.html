@@ -164,6 +164,31 @@
     .kb-bc-item:hover { text-decoration: underline; }
     .kb-bc-sep { color: var(--text-muted); }
 
+    /* ── Brand library ── */
+    #tab-brands.active { display:flex !important; flex-direction:column; }
+    .brand-item { padding:10px 12px;border-radius:8px;cursor:pointer;border:1.5px solid transparent;margin-bottom:4px;transition:all 0.1s; }
+    .brand-item:hover { background:var(--surface); }
+    .brand-item.active { border-color:var(--accent);background:#eff6ff; }
+    .brand-item-name { font-size:13px;font-weight:600;color:var(--text); }
+    .brand-item-meta { font-size:11px;color:var(--text-muted);margin-top:2px; }
+    .brand-badge { display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600; }
+    .brand-badge-ok { background:#dcfce7;color:#16a34a; }
+    .brand-badge-warn { background:#fef9c3;color:#854d0e; }
+    .brand-badge-missing { background:#fee2e2;color:#dc2626; }
+    .brand-section { margin-bottom:20px; }
+    .brand-section-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border); }
+    .brand-field-row { display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:13px; }
+    .brand-field-label { width:100px;flex-shrink:0;color:var(--text-muted); }
+    .brand-field-val { flex:1;color:var(--text); }
+    .brand-field-val.editable { cursor:pointer;border-bottom:1px dashed var(--border);padding-bottom:1px; }
+    .brand-field-val.editable:hover { border-color:var(--accent);color:var(--accent); }
+    .report-module { background:var(--surface);border-radius:8px;padding:12px 14px;margin-bottom:10px; }
+    .report-module-title { font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em; }
+    .tag-chip { display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;margin:2px; }
+    .tag-pos { background:#dcfce7;color:#15803d; }
+    .tag-neg { background:#fee2e2;color:#b91c1c; }
+    .tag-neu { background:#f1f5f9;color:#475569; }
+
     /* ── Toast ── */
     #toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
     #toast.show { opacity: 1; }
@@ -201,6 +226,9 @@
       </div>
       <div class="nav-item" data-tab="scenarios">
         <span class="nav-item-icon">🧪</span> 场景测试
+      </div>
+      <div class="nav-item" data-tab="brands">
+        <span class="nav-item-icon">🏪</span> 品牌库
       </div>
     </div>
     <div id="nav-footer">
@@ -299,9 +327,12 @@
       <div class="prompt-layout">
         <!-- Version list -->
         <div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div style="font-size:13px;font-weight:600;">版本列表</div>
-            <button class="btn btn-primary btn-sm" onclick="newDraft()">+ 新建草稿</button>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+            <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex:1;">
+              <button id="ptype-chat" class="btn btn-sm" style="flex:1;border-radius:0;border:none;background:var(--accent);color:#fff;font-size:12px;" onclick="setPromptType('chat')">对话</button>
+              <button id="ptype-brand_report" class="btn btn-sm" style="flex:1;border-radius:0;border:none;background:var(--surface);color:var(--text-muted);font-size:12px;" onclick="setPromptType('brand_report')">品牌报告</button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="newDraft()">+ 新建</button>
           </div>
           <div class="prompt-list" id="prompt-list">
             <div style="font-size:13px;color:var(--text-muted);padding:8px;">加载中...</div>
@@ -394,8 +425,22 @@
     <!-- Scenario Testing -->
     <div class="tab-panel" id="tab-scenarios">
       <div class="page-header">
-        <div class="page-title">场景测试</div>
-        <div class="page-sub">对 20 个真实商家场景进行 3 轮对话测试，Claude Judge 6 维度评分</div>
+        <div>
+          <div class="page-title">场景测试</div>
+          <div class="page-sub">对真实商家场景进行 3 轮对话测试，Claude Judge 6 维度评分</div>
+        </div>
+        <button class="btn btn-ghost" onclick="toggleScenarioManager()">⚙ 管理场景</button>
+      </div>
+
+      <!-- Scenario manager card (hidden by default) -->
+      <div id="scenario-manager-card" class="card" style="display:none;margin-bottom:20px;">
+        <div class="card-header">
+          <div class="card-header-title">场景库管理</div>
+          <button class="btn btn-primary btn-sm" onclick="openAddScenarioModal()">+ 新增场景</button>
+        </div>
+        <div id="scenario-manager-list" style="padding:0 20px 16px;">
+          <div style="color:var(--text-muted);font-size:13px;">加载中...</div>
+        </div>
       </div>
 
       <!-- Config card -->
@@ -459,6 +504,89 @@
       </div>
     </div>
 
+    <!-- Add/Edit Scenario Modal -->
+    <div id="scenario-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;">
+      <div style="background:#fff;border-radius:12px;padding:28px;width:640px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,0.15);margin-bottom:40px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div style="font-size:16px;font-weight:700;" id="scenario-modal-title">新增测试场景</div>
+          <button onclick="closeScenarioModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted);">×</button>
+        </div>
+        <input type="hidden" id="sm-id" value="" />
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);">场景编号 (如 C21)</label>
+            <input id="sm-sid" class="input" placeholder="C21" style="margin-top:4px;" />
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);">业务类型</label>
+            <input id="sm-business-type" class="input" placeholder="餐饮/竞品策略" style="margin-top:4px;" />
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">场景名称</label>
+          <input id="sm-name" class="input" placeholder="场景简短描述" style="margin-top:4px;" />
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);">店铺名称</label>
+            <input id="sm-shop-name" class="input" placeholder="如：西雅加达蛋挞店" style="margin-top:4px;" />
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);">分类 (category)</label>
+            <input id="sm-shop-category" class="input" placeholder="如：bakery" style="margin-top:4px;" />
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);">地址</label>
+            <input id="sm-shop-address" class="input" placeholder="如：Jakarta" style="margin-top:4px;" />
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">测试数据文件</label>
+          <div style="display:flex;gap:8px;margin-top:4px;align-items:center;">
+            <select id="sm-csv-name" class="input" style="flex:1;">
+              <option value="">-- 选择文件 --</option>
+            </select>
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer;white-space:nowrap;">
+              上传新文件
+              <input type="file" id="sm-csv-upload" accept=".xlsx,.xls,.csv" style="display:none;" onchange="scenarioUploadFile(this)" />
+            </label>
+          </div>
+          <div id="sm-csv-upload-status" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">第1轮问题 (Q1)</label>
+          <textarea id="sm-q1" class="input" rows="3" style="margin-top:4px;resize:vertical;"></textarea>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">第2轮问题 (Q2)</label>
+          <textarea id="sm-q2" class="input" rows="3" style="margin-top:4px;resize:vertical;"></textarea>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">第3轮问题 (Q3)</label>
+          <textarea id="sm-q3" class="input" rows="3" style="margin-top:4px;resize:vertical;"></textarea>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--text-muted);">合格必须命中 (must，每行一条)</label>
+          <textarea id="sm-must" class="input" rows="3" placeholder="每行一条，如：识别单店异常" style="margin-top:4px;resize:vertical;"></textarea>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:12px;color:var(--text-muted);">红旗关键词 (red_flags，每行一条)</label>
+          <textarea id="sm-red-flags" class="input" rows="3" placeholder="每行一条，如：先降价" style="margin-top:4px;resize:vertical;"></textarea>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-ghost" onclick="closeScenarioModal()">取消</button>
+          <button class="btn btn-primary" id="sm-save-btn" onclick="saveScenario()">保存</button>
+        </div>
+      </div>
+    </div>
+
     <!-- LLM Edit Modal -->
     <div id="llm-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center;">
       <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
@@ -485,6 +613,32 @@
         <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
           <button class="btn btn-ghost" onclick="closeLLMEditModal()">取消</button>
           <button class="btn btn-primary" onclick="confirmLLMEdit()">确认保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Brands -->
+    <div class="tab-panel" id="tab-brands" style="height:calc(100vh - 56px);overflow:hidden;">
+      <div style="display:flex;height:100%;gap:0;">
+        <!-- Left: brand list -->
+        <div style="width:380px;min-width:320px;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
+          <div style="padding:16px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:18px;font-weight:800;">品牌库</div>
+              <button class="btn btn-primary btn-sm" onclick="openAddBrandModal()">+ 新增品牌</button>
+            </div>
+            <input id="brand-search" type="text" placeholder="搜索品牌名…" oninput="filterBrands()"
+              style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:8px;">
+            <select id="brand-type-filter" onchange="filterBrands()"
+              style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+              <option value="">全部类型</option>
+            </select>
+          </div>
+          <div id="brand-list" style="flex:1;overflow-y:auto;padding:6px 8px;"></div>
+        </div>
+        <!-- Right: brand detail -->
+        <div id="brand-detail" style="flex:1;overflow-y:auto;padding:24px 28px;">
+          <div class="empty" style="margin-top:80px;">← 选择左侧品牌查看详情</div>
         </div>
       </div>
     </div>
@@ -527,6 +681,79 @@
   </div>
 </div>
 
+<!-- Add brand modal -->
+<div id="add-brand-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px;width:480px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;">新增品牌</div>
+      <button class="btn btn-ghost btn-sm" id="ab-prefill-btn" onclick="aiBrandPrefill()" style="font-size:12px;">✨ AI 预填</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div>
+        <div class="field-label">品牌名称 *</div>
+        <input id="ab-name" type="text" placeholder="如：瑞幸咖啡" style="width:100%;box-sizing:border-box;">
+      </div>
+      <div>
+        <div class="field-label">品类 *</div>
+        <input id="ab-type" type="text" placeholder="如：大众咖啡连锁" style="width:100%;box-sizing:border-box;">
+      </div>
+      <div>
+        <div class="field-label">地区</div>
+        <select id="ab-region" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+          <option value="cn">中国</option>
+          <option value="id">印尼</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label">总部城市</div>
+        <input id="ab-hq" type="text" placeholder="如：北京市" style="width:100%;box-sizing:border-box;">
+      </div>
+      <div>
+        <div class="field-label">成立年份</div>
+        <input id="ab-year" type="number" placeholder="如：2017" style="width:100%;box-sizing:border-box;">
+      </div>
+      <div>
+        <div class="field-label">门店数量（估算）</div>
+        <input id="ab-stores" type="number" placeholder="如：500" style="width:100%;box-sizing:border-box;">
+      </div>
+      <div>
+        <div class="field-label">价格定位</div>
+        <select id="ab-price-tier" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+          <option value="">请选择</option>
+          <option value="低价">低价</option>
+          <option value="中价">中价</option>
+          <option value="高价">高价</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label">品质感知</div>
+        <select id="ab-quality" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+          <option value="">请选择</option>
+          <option value="低">低</option>
+          <option value="中">中</option>
+          <option value="高">高</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div class="field-label">品牌简介</div>
+      <textarea id="ab-desc" placeholder="简短描述品牌定位、特色…" style="height:72px;"></textarea>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div class="field-label">主要竞品（逗号分隔）</div>
+      <input id="ab-competitors" type="text" placeholder="如：星巴克,Manner,M Stand" style="width:100%;box-sizing:border-box;">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <input type="checkbox" id="ab-auto-init" checked>
+      <label for="ab-auto-init" style="font-size:13px;cursor:pointer;">创建后自动初始化（高德采样 + 生成 report + 扫描画像）</label>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeAddBrandModal()">取消</button>
+      <button class="btn btn-primary" id="ab-submit-btn" onclick="submitAddBrand()">创建品牌</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -557,6 +784,7 @@
       else if (tab === 'stats') loadStats();
       else if (tab === 'llm') loadLLMConfigs();
       else if (tab === 'scenarios') loadScenarioList();
+      else if (tab === 'brands') loadBrands();
     });
   });
 
@@ -1106,9 +1334,22 @@
 
   // ── Prompts ────────────────────────────────────────────────────────────────
   let promptsData = [];
+  let _promptType = 'chat';
+
+  function setPromptType(type) {
+    _promptType = type;
+    document.getElementById('ptype-chat').style.background = type === 'chat' ? 'var(--accent)' : 'var(--surface)';
+    document.getElementById('ptype-chat').style.color = type === 'chat' ? '#fff' : 'var(--text-muted)';
+    document.getElementById('ptype-brand_report').style.background = type === 'brand_report' ? 'var(--accent)' : 'var(--surface)';
+    document.getElementById('ptype-brand_report').style.color = type === 'brand_report' ? '#fff' : 'var(--text-muted)';
+    currentPromptId = null;
+    document.getElementById('prompt-editor-placeholder').style.display = '';
+    document.getElementById('prompt-editor-content').style.display = 'none';
+    loadPrompts();
+  }
 
   async function loadPrompts() {
-    const res = await fetch(`${API}/admin/prompts`, { credentials: 'include' });
+    const res = await fetch(`${API}/admin/prompts?prompt_type=${_promptType}`, { credentials: 'include' });
     if (!res.ok) return;
     promptsData = await res.json();
     renderPromptList();
@@ -1185,13 +1426,23 @@
   }
 
   async function newDraft() {
-    const activeRes = await fetch(`${API}/admin/prompts/active`, { credentials: 'include' });
-    const active = await activeRes.json();
+    let initialContent = '';
+    if (_promptType === 'chat') {
+      const activeRes = await fetch(`${API}/admin/prompts/active`, { credentials: 'include' });
+      const active = await activeRes.json();
+      initialContent = active.content;
+    } else if (_promptType === 'brand_report') {
+      // Use current active brand_report prompt or empty
+      const activeRes = await fetch(`${API}/admin/prompts?prompt_type=brand_report`, { credentials: 'include' });
+      const list = await activeRes.json();
+      const active = list.find(p => p.status === 'active');
+      initialContent = active ? (await fetch(`${API}/admin/prompts/${active.id}`, { credentials: 'include' }).then(r => r.json())).content : '';
+    }
     const res = await fetch(`${API}/admin/prompts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ content: active.content, label: '新草稿' }),
+      body: JSON.stringify({ content: initialContent, label: '新草稿', prompt_type: _promptType }),
     });
     if (!res.ok) return;
     const p = await res.json();
@@ -1315,6 +1566,209 @@
 
   // ── Scenario Testing ───────────────────────────────────────────────────────
 
+  let _scenarioManagerVisible = false;
+
+  function toggleScenarioManager() {
+    _scenarioManagerVisible = !_scenarioManagerVisible;
+    const card = document.getElementById('scenario-manager-card');
+    card.style.display = _scenarioManagerVisible ? 'block' : 'none';
+    if (_scenarioManagerVisible) loadScenarioManagerList();
+  }
+
+  async function loadScenarioManagerList() {
+    const container = document.getElementById('scenario-manager-list');
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">加载中...</div>';
+    const res = await fetch(`${API}/admin/test-scenarios`, { credentials: 'include' });
+    if (!res.ok) { container.innerHTML = '<div style="color:var(--red);font-size:13px;">加载失败</div>'; return; }
+    const list = await res.json();
+    if (!list.length) { container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">暂无场景</div>'; return; }
+    container.innerHTML = `
+      <table>
+        <thead><tr>
+          <th style="width:60px;">编号</th>
+          <th>名称</th>
+          <th>业务类型</th>
+          <th style="width:80px;text-align:center;">状态</th>
+          <th style="width:80px;text-align:center;">操作</th>
+        </tr></thead>
+        <tbody>
+          ${list.map(s => `
+            <tr>
+              <td style="font-weight:600;color:var(--accent);">${s.sid}</td>
+              <td>${s.name}</td>
+              <td style="font-size:12px;color:var(--text-muted);">${s.business_type}</td>
+              <td style="text-align:center;">
+                <span style="font-size:12px;padding:2px 8px;border-radius:12px;background:${s.is_active ? 'var(--green-light,#e8f5e9)' : 'var(--border)'};color:${s.is_active ? 'var(--green,#2e7d32)' : 'var(--text-muted)'};">${s.is_active ? '启用' : '停用'}</span>
+              </td>
+              <td style="text-align:center;">
+                <button class="btn btn-ghost btn-sm" onclick="editScenario(${s.id})">编辑</button>
+                <button class="btn btn-ghost btn-sm" onclick="toggleScenarioActive(${s.id}, ${s.is_active})" style="color:${s.is_active ? 'var(--red)' : 'var(--accent)'};">${s.is_active ? '停用' : '启用'}</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  let _allScenariosCache = [];
+
+  async function _loadScenarioCsvSelect(selectedValue) {
+    const sel = document.getElementById('sm-csv-name');
+    sel.innerHTML = '<option value="">-- 选择文件 --</option>';
+    try {
+      const res = await fetch(`${API}/admin/test-scenarios/data-files`, { credentials: 'include' });
+      if (res.ok) {
+        const files = await res.json();
+        files.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f; opt.textContent = f;
+          if (f === selectedValue) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      }
+    } catch(e) {}
+    // if selectedValue not in list yet, add it
+    if (selectedValue && !Array.from(sel.options).some(o => o.value === selectedValue)) {
+      const opt = document.createElement('option');
+      opt.value = selectedValue; opt.textContent = selectedValue;
+      opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  async function scenarioUploadFile(input) {
+    if (!input.files.length) return;
+    const file = input.files[0];
+    const status = document.getElementById('sm-csv-upload-status');
+    status.textContent = '上传中...';
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${API}/admin/test-scenarios/data-files/upload`, {
+      method: 'POST', credentials: 'include', body: fd,
+    });
+    if (!res.ok) { status.textContent = '上传失败'; return; }
+    const { filename } = await res.json();
+    status.textContent = `✓ 已上传：${filename}`;
+    await _loadScenarioCsvSelect(filename);
+    input.value = '';
+  }
+
+  async function editScenario(id) {
+    let scn = _allScenariosCache.find(s => s.id === id);
+    if (!scn) {
+      const res = await fetch(`${API}/admin/test-scenarios`, { credentials: 'include' });
+      _allScenariosCache = await res.json();
+      scn = _allScenariosCache.find(s => s.id === id);
+    }
+    if (!scn) return;
+    document.getElementById('scenario-modal-title').textContent = `编辑场景 — ${scn.sid}`;
+    document.getElementById('sm-id').value = scn.id;
+    document.getElementById('sm-sid').value = scn.sid;
+    document.getElementById('sm-sid').disabled = true;
+    document.getElementById('sm-name').value = scn.name;
+    document.getElementById('sm-business-type').value = scn.business_type;
+    document.getElementById('sm-shop-name').value = scn.shop_name;
+    document.getElementById('sm-shop-category').value = scn.shop_category;
+    document.getElementById('sm-shop-address').value = scn.shop_address;
+    document.getElementById('sm-q1').value = scn.q1;
+    document.getElementById('sm-q2').value = scn.q2;
+    document.getElementById('sm-q3').value = scn.q3;
+    document.getElementById('sm-must').value = (scn.must || []).join('\n');
+    document.getElementById('sm-red-flags').value = (scn.red_flags || []).join('\n');
+    document.getElementById('sm-csv-upload-status').textContent = '';
+    document.getElementById('scenario-modal').style.display = 'flex';
+    await _loadScenarioCsvSelect(scn.csv_name);
+  }
+
+  async function toggleScenarioActive(id, currentlyActive) {
+    const res = await fetch(`${API}/admin/test-scenarios/${id}`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: !currentlyActive }),
+    });
+    if (!res.ok) { toast('操作失败'); return; }
+    _allScenariosCache = [];
+    loadScenarioManagerList();
+    loadScenarioList();  // refresh checklist too
+    toast(!currentlyActive ? '已启用' : '已停用');
+  }
+
+  async function openAddScenarioModal() {
+    document.getElementById('scenario-modal-title').textContent = '新增测试场景';
+    document.getElementById('sm-id').value = '';
+    document.getElementById('sm-sid').value = '';
+    document.getElementById('sm-sid').disabled = false;
+    document.getElementById('sm-name').value = '';
+    document.getElementById('sm-business-type').value = '';
+    document.getElementById('sm-shop-name').value = '';
+    document.getElementById('sm-shop-category').value = '';
+    document.getElementById('sm-shop-address').value = '';
+    document.getElementById('sm-q1').value = '';
+    document.getElementById('sm-q2').value = '';
+    document.getElementById('sm-q3').value = '';
+    document.getElementById('sm-must').value = '';
+    document.getElementById('sm-red-flags').value = '';
+    document.getElementById('sm-csv-upload-status').textContent = '';
+    document.getElementById('scenario-modal').style.display = 'flex';
+    await _loadScenarioCsvSelect('');
+  }
+
+  function closeScenarioModal() {
+    document.getElementById('scenario-modal').style.display = 'none';
+  }
+
+  async function saveScenario() {
+    const id = document.getElementById('sm-id').value;
+    const sid = document.getElementById('sm-sid').value.trim();
+    const name = document.getElementById('sm-name').value.trim();
+    if (!sid || !name) { toast('编号和名称不能为空'); return; }
+
+    const body = {
+      sid,
+      name,
+      business_type: document.getElementById('sm-business-type').value.trim(),
+      shop_name: document.getElementById('sm-shop-name').value.trim(),
+      shop_category: document.getElementById('sm-shop-category').value.trim(),
+      shop_address: document.getElementById('sm-shop-address').value.trim(),
+      csv_name: document.getElementById('sm-csv-name').value.trim(),
+      q1: document.getElementById('sm-q1').value.trim(),
+      q2: document.getElementById('sm-q2').value.trim(),
+      q3: document.getElementById('sm-q3').value.trim(),
+      must: document.getElementById('sm-must').value.split('\n').map(s=>s.trim()).filter(Boolean),
+      red_flags: document.getElementById('sm-red-flags').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    };
+
+    const btn = document.getElementById('sm-save-btn');
+    btn.disabled = true;
+
+    let res;
+    if (id) {
+      res = await fetch(`${API}/admin/test-scenarios/${id}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } else {
+      res = await fetch(`${API}/admin/test-scenarios`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    }
+
+    btn.disabled = false;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.detail || '保存失败'); return;
+    }
+    _allScenariosCache = [];
+    closeScenarioModal();
+    loadScenarioManagerList();
+    loadScenarioList();
+    toast(id ? '已更新' : '已创建');
+  }
+
   let _scenarioTaskId = null;
   let _scenarioPollTimer = null;
   let _scenarioHtml = null;
@@ -1323,13 +1777,13 @@
 
   async function loadScenarioList() {
     const container = document.getElementById('scenario-checklist');
-    const res = await fetch(`${API}/admin/test-scenarios/list`, { credentials: 'include' });
+    const res = await fetch(`${API}/admin/test-scenarios`, { credentials: 'include' });
     if (!res.ok) { container.innerHTML = '<div style="color:var(--red);font-size:13px;">加载失败</div>'; return; }
-    const scenes = await res.json();
+    const scenes = (await res.json()).filter(s => s.is_active !== false);
     container.innerHTML = scenes.map(s => `
       <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
-        <input type="checkbox" class="scenario-cb" value="${s.id}" checked style="width:14px;height:14px;flex-shrink:0;" />
-        <span style="font-weight:600;color:var(--accent);width:30px;flex-shrink:0;">${s.id}</span>
+        <input type="checkbox" class="scenario-cb" value="${s.sid}" checked style="width:14px;height:14px;flex-shrink:0;" />
+        <span style="font-weight:600;color:var(--accent);width:30px;flex-shrink:0;">${s.sid}</span>
         <span style="flex:1;">${s.name}</span>
         <span style="color:var(--text-muted);font-size:11px;white-space:nowrap;">${s.business_type}</span>
       </label>
@@ -1680,6 +2134,411 @@
     toast('已保存');
     closeLLMEditModal();
     loadLLMConfigs();
+  }
+
+  // ── Brand library ────────────────────────────────────────────────────────────
+  let _brandsAll = [];
+  let _brandSelected = null;
+
+  async function loadBrands() {
+    const res = await fetch(`${API}/admin/brands?limit=200`, { credentials: 'include' });
+    if (!res.ok) return;
+    _brandsAll = await res.json();
+
+    // Populate type filter
+    const types = [...new Set(_brandsAll.map(b => b.business_type).filter(Boolean))].sort();
+    const sel = document.getElementById('brand-type-filter');
+    sel.innerHTML = '<option value="">全部类型</option>' + types.map(t => `<option value="${_esc(t)}">${_esc(t)}</option>`).join('');
+
+    filterBrands();
+  }
+
+  function filterBrands() {
+    const q = document.getElementById('brand-search').value.toLowerCase();
+    const type = document.getElementById('brand-type-filter').value;
+    const filtered = _brandsAll.filter(b =>
+      (!q || b.name.toLowerCase().includes(q)) &&
+      (!type || b.business_type === type)
+    );
+    renderBrandList(filtered);
+  }
+
+  function renderBrandList(brands) {
+    const el = document.getElementById('brand-list');
+    if (!brands.length) { el.innerHTML = '<div class="empty">无结果</div>'; return; }
+
+    // Group by business_type
+    const groups = {};
+    brands.forEach(b => {
+      const g = b.business_type || '其他';
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(b);
+    });
+
+    let html = '';
+    for (const [type, items] of Object.entries(groups).sort()) {
+      html += `<div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);padding:8px 4px 4px;letter-spacing:.05em;">${_esc(type)}</div>`;
+      items.forEach(b => {
+        const isActive = _brandSelected === b.id;
+        const reportBadge = b.has_report
+          ? `<span class="brand-badge brand-badge-ok">✓ report</span>`
+          : `<span class="brand-badge brand-badge-missing">无 report</span>`;
+        const sampleWarn = b.amap_sample_size !== null && b.amap_sample_size < 10
+          ? `<span class="brand-badge brand-badge-warn">样本少</span>` : '';
+        html += `<div class="brand-item${isActive ? ' active' : ''}" data-id="${b.id}" onclick="selectBrand(${b.id})">
+          <div class="brand-item-name">${_esc(b.name)}</div>
+          <div class="brand-item-meta">
+            ${b.avg_price_amap ? `均价 ¥${b.avg_price_amap}` : '均价未知'} ·
+            ${b.avg_rating_amap ? `${b.avg_rating_amap}分` : '评分未知'}
+            &nbsp;${reportBadge}${sampleWarn}
+          </div>
+        </div>`;
+      });
+    }
+    el.innerHTML = html;
+  }
+
+  async function selectBrand(id) {
+    _brandSelected = id;
+    // Re-render list to update active state
+    filterBrands();
+
+    const detail = document.getElementById('brand-detail');
+    detail.innerHTML = '<div class="empty">加载中...</div>';
+
+    const res = await fetch(`${API}/admin/brands/${id}`, { credentials: 'include' });
+    if (!res.ok) { detail.innerHTML = '<div class="empty">加载失败</div>'; return; }
+    const b = await res.json();
+    renderBrandDetail(b);
+  }
+
+  function renderBrandDetail(b) {
+    const detail = document.getElementById('brand-detail');
+    const competitors = _tryParseJson(b.main_competitors, []);
+    const userTags = _tryParseJson(b.user_tags, []);
+    const profile = _tryParseJson(b.profile_json, null);
+    const report = b.report ? _tryParseJson(b.report.report_json, null) : null;
+
+    let html = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div>
+        <div style="font-size:22px;font-weight:800;">${_esc(b.name)}</div>
+        <div style="font-size:13px;color:var(--text-muted);">${_esc(b.business_type)} · ${_esc(b.region === 'cn' ? '中国' : b.region)}</div>
+      </div>
+      <div style="flex:1;"></div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" ${b.is_active ? 'checked' : ''} onchange="brandToggleActive(${b.id}, this.checked)"> 上线
+      </label>
+    </div>
+
+    <!-- Basic data -->
+    <div class="brand-section">
+      <div class="brand-section-title">基本数据</div>
+      <div class="brand-field-row"><span class="brand-field-label">成立年份</span><span class="brand-field-val editable" onclick="brandEditField(${b.id},'founded_year','成立年份',this)">${b.founded_year || '—'}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">门店数量</span><span class="brand-field-val editable" onclick="brandEditField(${b.id},'store_count','门店数量',this)">${b.store_count ? b.store_count + ' 家' : '—'}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">总部</span><span class="brand-field-val editable" onclick="brandEditField(${b.id},'headquarters','总部',this)">${_esc(b.headquarters || '—')}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">价格定位</span><span class="brand-field-val editable" onclick="brandEditField(${b.id},'price_tier','价格定位',this)">${_esc(b.price_tier || '—')}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">品质感知</span><span class="brand-field-val editable" onclick="brandEditField(${b.id},'quality_perception','品质感知',this)">${_esc(b.quality_perception || '—')}</span></div>
+    </div>
+
+    <!-- Amap data (trusted) -->
+    <div class="brand-section">
+      <div class="brand-section-title" style="color:var(--green);">📍 高德实测数据（可信）</div>
+      <div class="brand-field-row"><span class="brand-field-label">均价</span><span class="brand-field-val">${b.avg_price_amap ? '¥' + b.avg_price_amap : '—'}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">评分</span><span class="brand-field-val">${b.avg_rating_amap || '—'}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">样本量</span><span class="brand-field-val${b.amap_sample_size < 10 ? ' brand-badge-warn' : ''}">${b.amap_sample_size ?? '—'} 家${b.amap_sample_size < 10 ? ' ⚠️ 样本不足' : ''}</span></div>
+    </div>
+
+    <!-- AI-estimated data (editable) -->
+    <div class="brand-section">
+      <div class="brand-section-title" style="color:var(--orange);">✏️ AI 估算数据（可编辑）</div>
+      <div class="brand-field-row"><span class="brand-field-label">品牌简介</span>
+        <span class="brand-field-val editable" onclick="brandEditField(${b.id},'description','品牌简介',this)" style="white-space:pre-wrap;">${_esc(b.description || '—')}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">主要竞品</span>
+        <span class="brand-field-val editable" onclick="brandEditField(${b.id},'main_competitors','主要竞品（JSON数组）',this)">${_esc(competitors.join('、') || '—')}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">用户标签</span>
+        <span class="brand-field-val editable" onclick="brandEditField(${b.id},'user_tags','用户标签（JSON数组）',this)">${_esc(userTags.join('、') || '—')}</span></div>
+      <div class="brand-field-row"><span class="brand-field-label">扩张状态</span>
+        <span class="brand-field-val editable" onclick="brandEditField(${b.id},'expansion','扩张状态',this)">${_esc(b.expansion || '—')}</span></div>
+    </div>`;
+
+    // profile_json scan summary
+    if (profile && profile.scan_summary) {
+      const s = profile.scan_summary;
+      html += `<div class="brand-section">
+        <div class="brand-section-title">扫描画像（用户 onboarding 看到的）</div>
+        ${s.mirror ? `<div class="report-module"><div class="report-module-title">镜子</div><div style="font-size:13px;line-height:1.7;">${_esc(s.mirror)}</div></div>` : ''}
+        ${s.window ? `<div class="report-module"><div class="report-module-title">窗口</div><div style="font-size:13px;line-height:1.7;">${_esc(s.window)}</div></div>` : ''}
+        ${s.door ? `<div class="report-module"><div class="report-module-title">门</div><div style="font-size:13px;line-height:1.7;">${_esc(s.door)}</div></div>` : ''}
+      </div>`;
+    }
+
+    // Report section
+    html += `<div class="brand-section">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div class="brand-section-title" style="margin-bottom:0;">品牌体检报告</div>
+        <div style="flex:1;"></div>
+        <button class="btn btn-primary btn-sm" id="regen-btn-${b.id}" onclick="brandRegenReport(${b.id})">重新生成</button>
+      </div>`;
+
+    if (!report) {
+      html += `<div style="font-size:13px;color:var(--text-muted);padding:20px;text-align:center;background:var(--surface);border-radius:8px;">暂无 report，点击"重新生成"</div>`;
+    } else {
+      const r = report;
+      // Summary
+      if (r.brand_summary) {
+        html += `<div class="report-module">
+          <div class="report-module-title">品牌定位</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px;">${_esc(r.brand_summary.one_liner || '')}</div>
+          <div style="font-size:12px;color:var(--text-muted);">${_esc(r.brand_summary.tagline || '')}</div>
+        </div>`;
+      }
+      // User perception tags
+      if (r.user_perception) {
+        const p = r.user_perception;
+        html += `<div class="report-module"><div class="report-module-title">用户认知</div>`;
+        (p.positive || []).forEach(t => html += `<span class="tag-chip tag-pos">${_esc(t)}</span>`);
+        (p.negative || []).forEach(t => html += `<span class="tag-chip tag-neg">${_esc(t)}</span>`);
+        (p.neutral || []).forEach(t => html += `<span class="tag-chip tag-neu">${_esc(t)}</span>`);
+        html += `</div>`;
+      }
+      // Issues
+      if (r.issues?.length) {
+        html += `<div class="report-module"><div class="report-module-title">核心问题</div>`;
+        r.issues.forEach(item => {
+          const col = item.severity === 'high' ? 'var(--red)' : item.severity === 'medium' ? 'var(--orange)' : 'var(--text-muted)';
+          html += `<div style="margin-bottom:8px;"><span style="font-weight:600;color:${col};">${_esc(item.title)}</span><span style="font-size:12px;color:var(--text-muted);margin-left:8px;">${_esc(item.description)}</span></div>`;
+        });
+        html += `</div>`;
+      }
+      // Opportunities
+      if (r.opportunities?.length) {
+        html += `<div class="report-module"><div class="report-module-title">机会点</div>`;
+        r.opportunities.forEach(item => {
+          html += `<div style="margin-bottom:8px;"><span style="font-weight:600;color:var(--green);">${_esc(item.title)}</span><span style="font-size:12px;color:var(--text-muted);margin-left:8px;">${_esc(item.description)}</span></div>`;
+        });
+        html += `</div>`;
+      }
+      // Growth path
+      if (r.growth_path) {
+        html += `<div class="report-module"><div class="report-module-title">增长路径</div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:6px;">${_esc(r.growth_path.route || '')}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${_esc(r.growth_path.reason || '')}</div>`;
+        (r.growth_path.steps || []).forEach(s => {
+          html += `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;font-size:12px;">
+            <span style="background:var(--accent);color:#fff;padding:1px 7px;border-radius:10px;white-space:nowrap;">${_esc(s.phase)}</span>
+            <span>${_esc(s.action)}</span>
+            <span style="color:var(--text-muted);white-space:nowrap;">${_esc(s.timeframe)}</span>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+      // Competitor table
+      if (r.competitor_table?.length) {
+        html += `<div class="report-module"><div class="report-module-title">竞品对比</div>
+          <table style="width:100%;font-size:12px;border-collapse:collapse;">
+            <tr style="color:var(--text-muted);border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:4px 6px;">品牌</th>
+              <th style="text-align:left;padding:4px 6px;">优势</th>
+              <th style="text-align:left;padding:4px 6px;">弱点</th>
+              <th style="text-align:left;padding:4px 6px;">威胁</th>
+            </tr>`;
+        r.competitor_table.forEach(c => {
+          const tc = c.threat_level === '高' ? 'var(--red)' : c.threat_level === '中' ? 'var(--orange)' : 'var(--text-muted)';
+          html += `<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:5px 6px;font-weight:600;">${_esc(c.name)}</td>
+            <td style="padding:5px 6px;">${_esc(c.strength)}</td>
+            <td style="padding:5px 6px;">${_esc(c.weakness)}</td>
+            <td style="padding:5px 6px;color:${tc};">${_esc(c.threat_level)}</td>
+          </tr>`;
+        });
+        html += `</table></div>`;
+      }
+      html += `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">生成于 ${b.report.generated_at?.slice(0,10)} · ${b.report.model_used}</div>`;
+    }
+    html += `</div>`;
+
+    detail.innerHTML = html;
+  }
+
+  async function brandToggleActive(id, active) {
+    await fetch(`${API}/admin/brands/${id}`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: active }),
+    });
+    const b = _brandsAll.find(x => x.id === id);
+    if (b) b.is_active = active;
+    toast(active ? '已上线' : '已下线');
+    filterBrands();
+  }
+
+  async function brandEditField(id, field, label, el) {
+    const isJson = field === 'main_competitors' || field === 'user_tags';
+    const current = el.dataset.raw || el.textContent.replace('—', '').trim();
+    const val = prompt(`编辑「${label}」${isJson ? '\n格式：["值1","值2"]' : ''}：`, current);
+    if (val === null) return;
+    const body = { [field]: isJson ? val : (field === 'store_count' || field === 'founded_year' ? (parseInt(val) || null) : val) };
+    const res = await fetch(`${API}/admin/brands/${id}`, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { toast('保存失败'); return; }
+    toast('已保存');
+    selectBrand(id);
+  }
+
+  async function brandRegenReport(id) {
+    const btn = document.getElementById(`regen-btn-${id}`);
+    if (btn) { btn.disabled = true; btn.textContent = '生成中...'; }
+    try {
+      const res = await fetch(`${API}/admin/brands/${id}/regen-report`, {
+        method: 'POST', credentials: 'include',
+      });
+      if (!res.ok) { toast('生成失败'); return; }
+      toast('Report 已重新生成');
+      selectBrand(id);
+    } catch { toast('生成失败'); }
+    finally { if (btn) { btn.disabled = false; btn.textContent = '重新生成'; } }
+  }
+
+  function _tryParseJson(str, fallback) {
+    if (!str) return fallback;
+    try { return JSON.parse(str); } catch { return fallback; }
+  }
+
+  // ── Add brand modal ─────────────────────────────────────────────────────────
+  async function aiBrandPrefill() {
+    const name = document.getElementById('ab-name').value.trim();
+    if (!name) { toast('请先填写品牌名称'); document.getElementById('ab-name').focus(); return; }
+    const btn = document.getElementById('ab-prefill-btn');
+    btn.disabled = true; btn.textContent = '预填中...';
+    try {
+      const type = document.getElementById('ab-type').value.trim();
+      const res = await fetch(`${API}/admin/brands/prefill`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, business_type: type }),
+      });
+      if (!res.ok) { toast('AI 预填失败'); return; }
+      const d = await res.json();
+      if (d.business_type && !type) document.getElementById('ab-type').value = d.business_type;
+      if (d.headquarters)  document.getElementById('ab-hq').value = d.headquarters;
+      if (d.founded_year)  document.getElementById('ab-year').value = d.founded_year;
+      if (d.store_count)   document.getElementById('ab-stores').value = d.store_count;
+      if (d.price_tier)    document.getElementById('ab-price-tier').value = d.price_tier;
+      if (d.quality_perception) document.getElementById('ab-quality').value = d.quality_perception;
+      if (d.description)   document.getElementById('ab-desc').value = d.description;
+      if (d.main_competitors?.length) document.getElementById('ab-competitors').value = d.main_competitors.join(',');
+      toast('AI 预填完成，请检查并确认');
+    } finally {
+      btn.disabled = false; btn.textContent = '✨ AI 预填';
+    }
+  }
+
+  function openAddBrandModal() {
+    ['ab-name','ab-type','ab-hq','ab-desc','ab-competitors'].forEach(id => document.getElementById(id).value = '');
+    ['ab-year','ab-stores'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ab-region').value = 'cn';
+    document.getElementById('ab-price-tier').value = '';
+    document.getElementById('ab-quality').value = '';
+    document.getElementById('ab-auto-init').checked = true;
+    document.getElementById('ab-submit-btn').disabled = false;
+    document.getElementById('ab-submit-btn').textContent = '创建品牌';
+    document.getElementById('add-brand-modal').style.display = 'flex';
+  }
+
+  function closeAddBrandModal() {
+    document.getElementById('add-brand-modal').style.display = 'none';
+  }
+
+  async function submitAddBrand() {
+    const name = document.getElementById('ab-name').value.trim();
+    const type = document.getElementById('ab-type').value.trim();
+    if (!name || !type) { toast('品牌名称和品类必填'); return; }
+
+    const competitorsRaw = document.getElementById('ab-competitors').value.trim();
+    const competitors = competitorsRaw
+      ? JSON.stringify(competitorsRaw.split(/[,，]/).map(s => s.trim()).filter(Boolean))
+      : '[]';
+
+    const btn = document.getElementById('ab-submit-btn');
+    btn.disabled = true; btn.textContent = '创建中...';
+
+    const res = await fetch(`${API}/admin/brands`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        business_type: type,
+        region: document.getElementById('ab-region').value,
+        headquarters: document.getElementById('ab-hq').value.trim(),
+        description: document.getElementById('ab-desc').value.trim(),
+        founded_year: parseInt(document.getElementById('ab-year').value) || null,
+        store_count: parseInt(document.getElementById('ab-stores').value) || null,
+        price_tier: document.getElementById('ab-price-tier').value,
+        quality_perception: document.getElementById('ab-quality').value,
+        main_competitors: competitors,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast(err.detail || '创建失败');
+      btn.disabled = false; btn.textContent = '创建品牌';
+      return;
+    }
+
+    const created = await res.json();
+    closeAddBrandModal();
+    toast(`品牌「${name}」已创建`);
+
+    // Reload list and select new brand
+    await loadBrands();
+    selectBrand(created.id);
+
+    // Auto init
+    if (document.getElementById('ab-auto-init').checked) {
+      _startBrandInit(created.id, name);
+    }
+  }
+
+  const _initPollers = {};
+
+  async function _startBrandInit(brandId, brandName) {
+    toast(`开始初始化「${brandName}」，高德采样 → report → 画像，请稍候…`);
+
+    // Trigger init
+    await fetch(`${API}/admin/brands/${brandId}/init`, {
+      method: 'POST', credentials: 'include',
+    });
+
+    // Poll status
+    if (_initPollers[brandId]) clearInterval(_initPollers[brandId]);
+    const stepLabels = { starting: '启动中', amap: '高德采样中', report: '生成 report 中', profile: '生成画像中', done: '完成', error: '失败' };
+    _initPollers[brandId] = setInterval(async () => {
+      const r = await fetch(`${API}/admin/brands/${brandId}/init-status`, { credentials: 'include' });
+      const s = await r.json();
+
+      // Update badge in list
+      const item = document.querySelector(`.brand-item[data-id="${brandId}"] .brand-item-meta`);
+      if (item) {
+        const label = stepLabels[s.step] || s.step;
+        item.innerHTML = `<span class="brand-badge brand-badge-warn">⟳ ${label}</span>`;
+      }
+
+      if (s.status === 'done') {
+        clearInterval(_initPollers[brandId]);
+        toast(`「${brandName}」初始化完成`);
+        await loadBrands();
+        if (_brandSelected === brandId) selectBrand(brandId);
+      } else if (s.status === 'error') {
+        clearInterval(_initPollers[brandId]);
+        toast(`「${brandName}」初始化失败：${s.error}`);
+        await loadBrands();
+      }
+    }, 3000);
   }
 </script>
 </body>

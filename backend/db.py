@@ -120,6 +120,7 @@ class SystemPrompt(SQLModel, table=True):
     content: str
     status: str = Field(default="draft")       # draft | testing | active | archived
     label: str = Field(default="")
+    prompt_type: str = Field(default="chat")   # chat | brand_report
     created_by: Optional[int] = Field(default=None, foreign_key="users.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     published_at: Optional[datetime] = Field(default=None)
@@ -181,6 +182,25 @@ class RefreshToken(SQLModel, table=True):
     token_hash: str
     expires_at: datetime
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class TestScenario(SQLModel, table=True):
+    __tablename__ = "test_scenarios"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    sid: str = Field(index=True, unique=True)    # e.g. "C01"
+    name: str
+    business_type: str = Field(default="")
+    shop_json: str = Field(default="{}")         # {"name":..., "category":..., "address":...}
+    csv_name: str = Field(default="")            # test data file
+    q1: str = Field(default="")
+    q2: str = Field(default="")
+    q3: str = Field(default="")
+    must_json: str = Field(default="[]")         # JSON array of must-hit strings
+    red_flags_json: str = Field(default="[]")    # JSON array of red flag strings
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class LLMConfig(SQLModel, table=True):

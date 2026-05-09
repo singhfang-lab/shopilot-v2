@@ -95,7 +95,34 @@ class ScenarioResult:
 
 # ── 20 场景定义 ───────────────────────────────────────────────────────────────
 
-SCENE_META: dict[str, dict] = {
+def _load_scene_meta_from_db() -> dict[str, dict]:
+    """Load active test scenarios from DB. Returns empty dict on failure."""
+    try:
+        from sqlmodel import Session, select
+        from backend.db import engine, TestScenario
+        with Session(engine) as session:
+            rows = session.exec(
+                select(TestScenario).where(TestScenario.is_active == True).order_by(TestScenario.sid)
+            ).all()
+        result = {}
+        for row in rows:
+            result[row.sid] = {
+                "name": row.name,
+                "business_type": row.business_type,
+                "shop": json.loads(row.shop_json) if row.shop_json else {},
+                "csv_name": row.csv_name,
+                "q1": row.q1,
+                "q2": row.q2,
+                "q3": row.q3,
+                "must": json.loads(row.must_json) if row.must_json else [],
+                "red_flags": json.loads(row.red_flags_json) if row.red_flags_json else [],
+            }
+        return result
+    except Exception:
+        return {}
+
+
+_SCENE_META_FALLBACK: dict[str, dict] = {
 "C01": {
     "name": "多门店 PIK 单店异常诊断",
     "business_type": "餐饮/多门店",
@@ -317,6 +344,9 @@ SCENE_META: dict[str, dict] = {
     "red_flags": ["加大活动冲销售", "只说控制成本"],
 },
 }
+
+# Load from DB at import time; fall back to hardcoded dict if DB unavailable
+SCENE_META: dict[str, dict] = _load_scene_meta_from_db() or _SCENE_META_FALLBACK
 
 
 # ── Judge ─────────────────────────────────────────────────────────────────────
