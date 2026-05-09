@@ -1754,21 +1754,80 @@
     const title = document.getElementById('kb-modal-title');
     const body = document.getElementById('kb-modal-body');
     const brandName = currentUser?.merchant?.name || '商家';
-    title.textContent = brandName + ' · 品牌画像';
+    title.textContent = brandName;
     body.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">加载中...</div>';
     modal.classList.remove('hidden');
     try {
       const res = await fetch(`${API}/onboarding/profile`, { credentials: 'include' });
       const data = await res.json();
-      if (!data.profile_json) {
-        body.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">暂无品牌画像，请先完成品牌设置。</div>';
-        return;
-      }
-      const wrap = document.createElement('div');
-      wrap.className = 'bc-canvas-wrap';
-      renderBrandCanvasInto(data, wrap);
       body.innerHTML = '';
-      body.appendChild(wrap);
+
+      // ── 品牌简报区（可折叠） ──
+      const briefSection = document.createElement('div');
+      briefSection.style.cssText = 'border-bottom:1px solid var(--border);';
+
+      const briefHeader = document.createElement('div');
+      briefHeader.style.cssText = 'display:flex;align-items:center;gap:8px;padding:14px 20px;cursor:pointer;user-select:none;';
+      briefHeader.innerHTML = `<span style="font-size:13px;font-weight:600;color:var(--text);flex:1;">品牌画像</span><span id="brief-chevron" style="font-size:11px;color:var(--text-muted);transition:transform 0.2s;">▼</span>`;
+
+      const briefBody = document.createElement('div');
+      briefBody.id = 'brief-body';
+      briefBody.style.cssText = 'padding:0 20px 16px;display:none;';
+
+      if (!data.profile_json) {
+        briefBody.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px 0;text-align:center">暂无品牌画像，请先完成品牌设置。</div>';
+      } else {
+        const wrap = document.createElement('div');
+        wrap.className = 'bc-canvas-wrap';
+        renderBrandCanvasInto(data, wrap);
+        briefBody.appendChild(wrap);
+      }
+
+      const chevron = briefHeader.querySelector('#brief-chevron');
+      chevron.style.transform = 'rotate(-90deg)';
+      let briefOpen = false;
+      briefHeader.addEventListener('click', () => {
+        briefOpen = !briefOpen;
+        briefBody.style.display = briefOpen ? '' : 'none';
+        chevron.style.transform = briefOpen ? '' : 'rotate(-90deg)';
+      });
+
+      briefSection.appendChild(briefHeader);
+      briefSection.appendChild(briefBody);
+      body.appendChild(briefSection);
+
+      // ── 上传文件区 ──
+      const filesSection = document.createElement('div');
+      filesSection.style.cssText = 'padding:14px 20px 20px;';
+
+      const filesHeader = document.createElement('div');
+      filesHeader.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+      filesHeader.innerHTML = `
+        <span style="font-size:13px;font-weight:600;color:var(--text);flex:1;">上传文件</span>
+        <button onclick="document.getElementById('kb-modal-overlay').classList.add('hidden');openMerchantKBModal();"
+          style="font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--text-muted);">管理文件库</button>`;
+      filesSection.appendChild(filesHeader);
+
+      const uploadDocs = _merchantKBItems.filter(i => i.source_type === 'upload' && !i.original_name.endsWith('/.keep'));
+      if (!uploadDocs.length) {
+        filesSection.innerHTML += '<div style="color:var(--text-muted);font-size:13px;padding:12px 0;text-align:center;">暂无上传文件</div>';
+      } else {
+        const list = document.createElement('div');
+        list.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+        for (const doc of uploadDocs) {
+          const fname = doc.original_name.split('/').pop();
+          const ext = fname.split('.').pop().toLowerCase();
+          const icon = ext==='pdf'?'📕':ext==='md'?'📝':(ext==='xlsx'||ext==='xls'||ext==='csv')?'📊':'📄';
+          const statusColor = doc.status==='indexed'?'#22c55e':doc.status==='processing'?'#f59e0b':'#ef4444';
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:var(--surface);font-size:13px;';
+          row.innerHTML = `<span>${icon}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(fname)}</span><span style="width:6px;height:6px;border-radius:50%;background:${statusColor};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${doc.chunk_count||0} chunks</span>`;
+          list.appendChild(row);
+        }
+        filesSection.appendChild(list);
+      }
+      body.appendChild(filesSection);
+
     } catch {
       body.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:32px;text-align:center">加载失败</div>';
     }
