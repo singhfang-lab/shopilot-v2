@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import secrets
 import threading
@@ -10,8 +11,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+logger = logging.getLogger(__name__)
+
 import httpx
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -193,10 +196,8 @@ async def _index_platform_doc(doc_id: int, path: Path):
                 db.add(doc)
                 db.commit()
     except Exception as e:
-        print(f"[platform-kb] indexing failed: {e}")
-        from .db import engine
-        from sqlmodel import Session as S2
-        with S2(engine) as db:
+        logger.error("[platform-kb] indexing failed for doc_id=%s: %s", doc_id, e)
+        with S(engine) as db:
             doc = db.get(PlatformKBDocument, doc_id)
             if doc:
                 doc.status = "failed"
@@ -1313,7 +1314,7 @@ def update_test_scenario(scenario_id: int, req: UpdateScenarioRequest,
             shop["address"] = req.shop_address
         row.shop_json = json.dumps(shop, ensure_ascii=False)
 
-    row.updated_at = datetime.utcnow()
+    row.updated_at = datetime.now(timezone.utc)
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -1328,3 +1329,203 @@ def delete_test_scenario(scenario_id: int, db: Session = Depends(get_db), admin=
     db.delete(row)
     db.commit()
     return {"ok": True}
+
+
+# ── Bulk import ───────────────────────────────────────────────────────────────
+
+_TEMPLATE_PATH = Path(__file__).parent / "scenario_import_template.xlsx"
+
+_REQUIRED_COLS = {"sid", "name"}
+_ALL_COLS = ["sid", "name", "business_type", "shop_name", "shop_category",
+             "shop_address", "csv_name", "q1", "q2", "q3", "must", "red_flags"]
+
+
+@router.get("/test-scenarios/bulk-import/template")
+def download_bulk_import_template(admin=Depends(require_admin)):
+    """Download the Excel template with instructions."""
+    if not _TEMPLATE_PATH.exists():
+        raise HTTPException(404, "Template file not found on server")
+    from fastapi.responses import FileResponse
+    return FileResponse(
+        path=str(_TEMPLATE_PATH),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename="scenario_import_template.xlsx",
+    )
+
+
+@router.post("/test-scenarios/bulk-import")
+async def bulk_import_scenarios(
+    file: UploadFile = File(...),
+    overwrite: bool = Form(False),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Upload a zip containing:
+      - one .xlsx file (scenarios) — must have a sheet named "场景数据"
+      - optional data files named {sid}.csv or {sid}.xlsx
+
+    Returns a summary: created / updated / skipped / errors.
+    """
+    import zipfile
+    import tempfile
+    import openpyxl
+
+    if not file.filename.endswith(".zip"):
+        raise HTTPException(400, "请上传 .zip 文件")
+
+    content = await file.read()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        zip_path = tmp / "upload.zip"
+        zip_path.write_bytes(content)
+
+        try:
+            with zipfile.ZipFile(zip_path) as zf:
+                zf.extractall(tmp)
+        except zipfile.BadZipFile:
+            raise HTTPException(400, "zip 文件损坏，请重新压缩后上传")
+
+        # Find the Excel file (exclude macOS __MACOSX junk)
+        xlsx_files = [
+            p for p in tmp.rglob("*.xlsx")
+            if "__MACOSX" not in str(p) and p.name != "upload.zip"
+        ]
+        if not xlsx_files:
+            raise HTTPException(400, "zip 内未找到 .xlsx 文件")
+        if len(xlsx_files) > 1:
+            raise HTTPException(400, f"zip 内有多个 .xlsx 文件，请只保留一个场景表：{[f.name for f in xlsx_files]}")
+
+        xlsx_path = xlsx_files[0]
+        try:
+            wb = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
+        except Exception as e:
+            raise HTTPException(422, f"无法读取 Excel 文件：{e}")
+
+        if "场景数据" not in wb.sheetnames:
+            raise HTTPException(422, f"Excel 中未找到「场景数据」sheet，现有 sheet：{wb.sheetnames}")
+
+        ws = wb["场景数据"]
+        rows = list(ws.iter_rows(values_only=True))
+
+        if len(rows) < 3:
+            raise HTTPException(422, "「场景数据」sheet 内容为空（至少需要表头行+说明行+一条数据）")
+
+        # Row 1 = headers, Row 2 = hints (skip), Row 3+ = data
+        raw_headers = [str(h).strip() if h else "" for h in rows[0]]
+        col_idx = {h: i for i, h in enumerate(raw_headers) if h in _ALL_COLS}
+
+        missing = _REQUIRED_COLS - set(col_idx.keys())
+        if missing:
+            raise HTTPException(422, f"Excel 缺少必填列：{missing}，请使用官方模板")
+
+        def _get(row, col_name, default=""):
+            idx = col_idx.get(col_name)
+            if idx is None:
+                return default
+            v = row[idx]
+            return str(v).strip() if v is not None else default
+
+        # Collect data attachments from zip (flat — any depth)
+        data_files = {
+            p.name: p for p in tmp.rglob("*")
+            if p.is_file()
+            and p.suffix.lower() in (".csv", ".xlsx", ".xls")
+            and "__MACOSX" not in str(p)
+            and p != xlsx_path
+        }
+
+        SCENARIO_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+        results = {"created": 0, "updated": 0, "skipped": 0, "errors": []}
+
+        for row_num, row in enumerate(rows[2:], start=3):
+            sid = _get(row, "sid")
+            name = _get(row, "name")
+
+            # Skip blank rows
+            if not sid and not name:
+                continue
+
+            # Validate
+            row_errors = []
+            if not sid:
+                row_errors.append("sid 为空")
+            if not name:
+                row_errors.append("name 为空")
+            if not sid.replace("_", "").isalnum():
+                row_errors.append(f"sid '{sid}' 含非法字符（只允许字母和数字）")
+            if row_errors:
+                results["errors"].append({"row": row_num, "sid": sid or "?", "reason": "；".join(row_errors)})
+                continue
+
+            csv_name = _get(row, "csv_name")
+
+            # Copy data attachment if present in zip
+            if csv_name:
+                src = data_files.get(csv_name)
+                if src:
+                    dest = SCENARIO_DATA_DIR / csv_name
+                    import shutil
+                    shutil.copy2(src, dest)
+                else:
+                    results["errors"].append({
+                        "row": row_num, "sid": sid,
+                        "reason": f"csv_name='{csv_name}' 在 zip 内未找到对应文件",
+                    })
+                    # Don't abort — still import the scenario record
+
+            # Parse must / red_flags (semicolon separated)
+            def _split(val):
+                return [x.strip() for x in val.split(";") if x.strip()]
+
+            shop = {
+                "name":     _get(row, "shop_name"),
+                "category": _get(row, "shop_category"),
+                "address":  _get(row, "shop_address"),
+            }
+
+            existing = db.exec(select(TestScenario).where(TestScenario.sid == sid)).first()
+            if existing:
+                if not overwrite:
+                    results["skipped"] += 1
+                    continue
+                existing.name          = name
+                existing.business_type = _get(row, "business_type")
+                existing.shop_json     = json.dumps(shop, ensure_ascii=False)
+                existing.csv_name      = csv_name
+                existing.q1            = _get(row, "q1")
+                existing.q2            = _get(row, "q2")
+                existing.q3            = _get(row, "q3")
+                existing.must_json     = json.dumps(_split(_get(row, "must")), ensure_ascii=False)
+                existing.red_flags_json= json.dumps(_split(_get(row, "red_flags")), ensure_ascii=False)
+                existing.updated_at    = datetime.now(timezone.utc)
+                db.add(existing)
+                results["updated"] += 1
+            else:
+                row_obj = TestScenario(
+                    sid           = sid,
+                    name          = name,
+                    business_type = _get(row, "business_type"),
+                    shop_json     = json.dumps(shop, ensure_ascii=False),
+                    csv_name      = csv_name,
+                    q1            = _get(row, "q1"),
+                    q2            = _get(row, "q2"),
+                    q3            = _get(row, "q3"),
+                    must_json     = json.dumps(_split(_get(row, "must")), ensure_ascii=False),
+                    red_flags_json= json.dumps(_split(_get(row, "red_flags")), ensure_ascii=False),
+                )
+                db.add(row_obj)
+                results["created"] += 1
+
+        db.commit()
+
+    return {
+        "ok": True,
+        "created": results["created"],
+        "updated": results["updated"],
+        "skipped": results["skipped"],
+        "errors":  results["errors"],
+        "total_processed": results["created"] + results["updated"] + results["skipped"] + len(results["errors"]),
+    }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -37,7 +37,7 @@ class User(SQLModel, table=True):
     display_name: str = Field(default="")
     role: str = Field(default="user")          # "user" | "admin"
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login_at: Optional[datetime] = Field(default=None)
 
 
@@ -49,7 +49,7 @@ class Merchant(SQLModel, table=True):
     business_type: str = Field(default="")
     address: str = Field(default="")
     meta_json: str = Field(default="")  # JSON blob: place_ids, store_count, chain_kb, etc.
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class UserMerchant(SQLModel, table=True):
@@ -67,8 +67,8 @@ class Conversation(SQLModel, table=True):
     user_id: int = Field(foreign_key="users.id")
     merchant_id: Optional[int] = Field(default=None, foreign_key="merchants.id")
     title: str = Field(default="")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_archived: bool = Field(default=False)
 
 
@@ -80,7 +80,7 @@ class Message(SQLModel, table=True):
     role: str                          # "user" | "assistant" | "summary"
     content: str
     canvas_json: Optional[str] = Field(default=None)  # JSON array of canvasUpdate events
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class KBDocument(SQLModel, table=True):
@@ -95,7 +95,7 @@ class KBDocument(SQLModel, table=True):
     chunk_count: int = Field(default=0)
     file_size: int = Field(default=0)
     uploaded_by: Optional[int] = Field(default=None, foreign_key="users.id")
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     indexed_at: Optional[datetime] = Field(default=None)
 
 
@@ -108,7 +108,7 @@ class PlatformKBDocument(SQLModel, table=True):
     status: str = Field(default="processing")   # processing | indexed | failed
     chunk_count: int = Field(default=0)
     uploaded_by: Optional[int] = Field(default=None, foreign_key="users.id")
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     indexed_at: Optional[datetime] = Field(default=None)
 
 
@@ -122,7 +122,7 @@ class SystemPrompt(SQLModel, table=True):
     label: str = Field(default="")
     prompt_type: str = Field(default="chat")   # chat | brand_report
     created_by: Optional[int] = Field(default=None, foreign_key="users.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     published_at: Optional[datetime] = Field(default=None)
     test_result: str = Field(default="")
 
@@ -159,8 +159,8 @@ class BrandProfile(SQLModel, table=True):
     profile_json: str = Field(default="")                # 预生成轻量级画像 JSON（onboarding 用）
     data_sources: str = Field(default="{}")              # JSON，记录字段来源
     is_active: bool = Field(default=True)                # 上线/下线控制
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class BrandReport(SQLModel, table=True):
@@ -170,7 +170,7 @@ class BrandReport(SQLModel, table=True):
     brand_id: int = Field(foreign_key="brand_profiles.id", index=True)
     report_json: str                             # 完整10模块 JSON
     prompt_template: str = Field(default="")    # 生成时使用的 prompt 模板快照
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     model_used: str = Field(default="")
 
 
@@ -181,7 +181,7 @@ class RefreshToken(SQLModel, table=True):
     user_id: int = Field(foreign_key="users.id")
     token_hash: str
     expires_at: datetime
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class TestScenario(SQLModel, table=True):
@@ -199,8 +199,8 @@ class TestScenario(SQLModel, table=True):
     must_json: str = Field(default="[]")         # JSON array of must-hit strings
     red_flags_json: str = Field(default="[]")    # JSON array of red flag strings
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class LLMConfig(SQLModel, table=True):
@@ -214,7 +214,7 @@ class LLMConfig(SQLModel, table=True):
     is_active: bool = Field(default=False)  # only one row should be active
     label: str = Field(default="")          # e.g. "Gemini Pro (production)"
     created_by: Optional[int] = Field(default=None, foreign_key="users.id")
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ── Session dependency ────────────────────────────────────────────────────────
@@ -225,10 +225,11 @@ def get_db():
 
 
 _DEFAULT_LLM_CONFIGS = [
-    {"provider": "claude", "model": "claude-opus-4-7",   "label": "Claude Opus 4.7",  "is_active": True},
-    {"provider": "claude", "model": "claude-sonnet-4-6", "label": "Claude Sonnet 4.6","is_active": True},
-    {"provider": "openai", "model": "gpt-4o",            "label": "GPT-4o",           "is_active": True},
-    {"provider": "openai", "model": "o4-mini",           "label": "o4-mini",          "is_active": True},
+    # updated_at is staggered so get_active_config (order by updated_at desc) picks Sonnet first
+    {"provider": "claude", "model": "claude-sonnet-4-6", "label": "Claude Sonnet 4.6","is_active": True,  "offset_seconds": 3},
+    {"provider": "claude", "model": "claude-opus-4-7",   "label": "Claude Opus 4.7",  "is_active": True,  "offset_seconds": 2},
+    {"provider": "openai", "model": "gpt-4o",            "label": "GPT-4o",           "is_active": True,  "offset_seconds": 1},
+    {"provider": "openai", "model": "o4-mini",           "label": "o4-mini",          "is_active": True,  "offset_seconds": 0},
 ]
 
 
@@ -238,6 +239,8 @@ def init_db():
     with Session(engine) as session:
         existing = session.exec(__import__("sqlmodel", fromlist=["select"]).select(LLMConfig)).first()
         if not existing:
+            now = datetime.now(timezone.utc)
             for cfg in _DEFAULT_LLM_CONFIGS:
-                session.add(LLMConfig(**cfg, updated_at=datetime.utcnow()))
+                offset = cfg.pop("offset_seconds")
+                session.add(LLMConfig(**cfg, updated_at=now + timedelta(seconds=offset)))
             session.commit()

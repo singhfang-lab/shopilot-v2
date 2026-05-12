@@ -36,8 +36,10 @@ OPENAI_API_BASE = "https://api.openai.com/v1"
 # ── Config helpers ────────────────────────────────────────────────────────────
 
 def get_active_config(db: Session) -> LLMConfig:
-    """Return active LLM config from DB, falling back to env vars."""
-    cfg = db.exec(select(LLMConfig).where(LLMConfig.is_active == True)).first()
+    """Return the most-recently-updated active LLM config, falling back to env vars."""
+    cfg = db.exec(
+        select(LLMConfig).where(LLMConfig.is_active == True).order_by(LLMConfig.updated_at.desc())
+    ).first()
     if cfg:
         return cfg
     return LLMConfig(

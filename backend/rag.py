@@ -112,12 +112,11 @@ async def _get_pg_pool():
 
 
 def _pg_shop_id(shop_id: str | None) -> str:
-    return shop_id or "knowledge"
+    # Only use "knowledge" for explicit None (platform KB); empty string is not a valid merchant shop_id
+    if shop_id is None:
+        return "knowledge"
+    return shop_id
 
-
-def _pg_add(chunks: list[str], source: str, shop_id: str | None) -> int:
-    import asyncio
-    return asyncio.get_event_loop().run_until_complete(_pg_add_async(chunks, source, shop_id))
 
 
 async def _pg_add_async(chunks: list[str], source: str, shop_id: str | None) -> int:
@@ -203,8 +202,8 @@ async def _pg_query_async(question: str, top_k: int, shop_id: str | None) -> lis
     emb = _embed(question)
     emb_str = "[" + ",".join(str(x) for x in emb) + "]"
     rows = await pool.fetch(
-        f"SELECT content FROM kb_chunks WHERE shop_id = $1 ORDER BY embedding <=> '{emb_str}'::vector LIMIT $2",
-        sid, min(top_k, cnt),
+        "SELECT content FROM kb_chunks WHERE shop_id = $1 ORDER BY embedding <=> $2::vector LIMIT $3",
+        sid, emb_str, min(top_k, cnt),
     )
     return [r["content"] for r in rows]
 
@@ -387,7 +386,7 @@ def query_multi(question: str, shop_id: str | None, merchant_top_k: int = 3, pla
             pool = await _get_pg_pool()
             results = {}
             for key, sid, k in [
-                ("merchant", _pg_shop_id(shop_id) if shop_id else None, merchant_top_k),
+                ("merchant", _pg_shop_id(shop_id) if shop_id and shop_id.strip() else None, merchant_top_k),
                 ("platform", "knowledge", platform_top_k),
             ]:
                 if sid is None:
@@ -399,8 +398,8 @@ def query_multi(question: str, shop_id: str | None, merchant_top_k: int = 3, pla
                     continue
                 emb_str = "[" + ",".join(str(x) for x in emb) + "]"
                 rows = await pool.fetch(
-                    f"SELECT content FROM kb_chunks WHERE shop_id = $1 ORDER BY embedding <=> '{emb_str}'::vector LIMIT $2",
-                    sid, min(k, cnt),
+                    "SELECT content FROM kb_chunks WHERE shop_id = $1 ORDER BY embedding <=> $2::vector LIMIT $3",
+                    sid, emb_str, min(k, cnt),
                 )
                 results[key] = [r["content"] for r in rows]
             return results

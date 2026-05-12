@@ -88,11 +88,7 @@ UPLOADS_DIR = Path.home() / "usb-assistant" / "uploads"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Data Agent session store ──────────────────────────────────────────────────
-import time as _time
-
-# session_key → {conn, schema, filenames, created_at}
-DATA_SESSIONS: dict[str, dict] = {}
-DATA_SESSION_TTL = 3600  # 60 minutes
+from . import session_store as _ss
 
 
 def _session_key(current_user, shop_id: str) -> str | None:
@@ -106,17 +102,9 @@ def _session_key(current_user, shop_id: str) -> str | None:
 async def _cleanup_data_sessions():
     while True:
         await asyncio.sleep(600)
-        now = _time.time()
-        expired = [k for k, v in list(DATA_SESSIONS.items())
-                   if now - v["created_at"] > DATA_SESSION_TTL]
-        for k in expired:
-            try:
-                DATA_SESSIONS[k]["conn"].close()
-            except Exception:
-                pass
-            del DATA_SESSIONS[k]
-        if expired:
-            logger.info("Cleaned %d expired data sessions", len(expired))
+        removed = _ss.cleanup_expired()
+        if removed:
+            logger.info("Cleaned %d expired data sessions", removed)
 
 
 class ChatRequest(BaseModel):
@@ -449,7 +437,7 @@ async def chat(req: ChatRequest, current_user=Depends(get_current_user_optional)
     # ── Data Agent session lookup (before file parsing) ──────────────────────
     _raw_shop_id = req.shop_config.get("shop_name") or req.shop_config.get("store_name") or ""
     _skey = _session_key(current_user, _raw_shop_id)
-    _data_session = DATA_SESSIONS.get(_skey) if _skey else None
+    _data_session = _ss.get_session(_skey) if _skey else None
     _use_sql_agent = bool(_data_session) and llm_cfg.provider in ("claude", "openai")
 
     if _use_sql_agent and _data_session:
@@ -703,12 +691,6 @@ async def get_config():
     return {}
 
 
-_PROVIDER_MODELS = {
-    "claude": ["claude-opus-4-7", "claude-sonnet-4-6"],
-    "openai": ["gpt-4o", "o4-mini"],
-}
-
-
 @app.get("/status")
 async def status(db: Session = Depends(get_db)):
     online = await is_online()
@@ -883,20 +865,16 @@ async def upload(
             from .data_agent import load_to_duckdb
             _skey = _session_key(current_user, shop_id)
             if _skey:
-                if _skey in DATA_SESSIONS:
+                existing = _ss.get_session(_skey)
+                if existing:
                     _, new_schema = load_to_duckdb(
-                        [save_path], conn=DATA_SESSIONS[_skey]["conn"]
+                        [save_path], conn=existing["conn"]
                     )
-                    DATA_SESSIONS[_skey]["filenames"].append(save_path.name)
-                    DATA_SESSIONS[_skey]["schema"] += "\n\n" + new_schema
+                    existing["filenames"].append(save_path.name)
+                    existing["schema"] += "\n\n" + new_schema
                 else:
                     conn, schema = load_to_duckdb([save_path])
-                    DATA_SESSIONS[_skey] = {
-                        "conn": conn,
-                        "schema": schema,
-                        "filenames": [save_path.name],
-                        "created_at": _time.time(),
-                    }
+                    _ss.set_session(_skey, conn, schema, [save_path.name])
         except Exception as _e:
             logger.warning("Data session load failed: %s", _e)
 
@@ -918,13 +896,13 @@ async def upload(
                 chunk_count = 0
             # Update KBDocument status
             if kb_doc_id:
-                from datetime import datetime
+                from datetime import datetime, timezone
                 with Session(db.bind) as s:
                     doc = s.get(KBDocument, kb_doc_id)
                     if doc:
                         doc.status = "indexed"
                         doc.chunk_count = chunk_count
-                        doc.indexed_at = datetime.utcnow()
+                        doc.indexed_at = datetime.now(timezone.utc)
                         s.add(doc)
                         s.commit()
         except Exception:

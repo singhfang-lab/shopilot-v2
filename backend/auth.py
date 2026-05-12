@@ -207,10 +207,23 @@ def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
 
 
 @router.post("/logout")
-def logout(response: Response, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    tokens = db.exec(select(RefreshToken).where(RefreshToken.user_id == user.id)).all()
-    for t in tokens:
-        db.delete(t)
+def logout(
+    response: Response,
+    user: User = Depends(get_current_user),
+    refresh_token: Optional[str] = Cookie(default=None),
+    db: Session = Depends(get_db),
+):
+    if refresh_token:
+        token_hash = _hash_token(refresh_token)
+        stored = db.exec(
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+        ).first()
+        if stored:
+            db.delete(stored)
+    else:
+        # No cookie present — clear all sessions for this user as fallback
+        for t in db.exec(select(RefreshToken).where(RefreshToken.user_id == user.id)).all():
+            db.delete(t)
     db.commit()
     _clear_cookies(response, admin=False)
     return {"ok": True}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -118,7 +118,7 @@ def update_conversation(
         conv.title = req.title
     if req.is_archived is not None:
         conv.is_archived = req.is_archived
-    conv.updated_at = datetime.utcnow()
+    conv.updated_at = datetime.now(timezone.utc)
     db.add(conv)
     db.commit()
     return {"ok": True}
@@ -163,7 +163,7 @@ def append_messages(
         if first_user:
             conv.title = first_user[:30]
 
-    conv.updated_at = datetime.utcnow()
+    conv.updated_at = datetime.now(timezone.utc)
     db.add(conv)
     db.commit()
     return {"ok": True}

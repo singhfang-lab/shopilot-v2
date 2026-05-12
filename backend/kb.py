@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -179,16 +179,8 @@ def delete_kb_document(
         file_path.unlink()
 
     # Clear DuckDB session so deleted file is no longer queryable
-    import sys
-    _main = sys.modules.get("backend.main") or sys.modules.get("app.backend.main")
-    if _main and hasattr(_main, "DATA_SESSIONS"):
-        session_key = f"user:{user.id}"
-        session = _main.DATA_SESSIONS.pop(session_key, None)
-        if session:
-            try:
-                session["conn"].close()
-            except Exception:
-                pass
+    from . import session_store as _ss
+    _ss.pop_session(f"user:{user.id}")
 
     db.delete(doc)
     db.commit()
@@ -236,7 +228,7 @@ def create_kb_folder(
         chunk_count=0,
         file_size=0,
         uploaded_by=user.id,
-        indexed_at=datetime.utcnow(),
+        indexed_at=datetime.now(timezone.utc),
     )
     db.add(doc)
     db.commit()

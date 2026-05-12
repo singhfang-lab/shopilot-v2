@@ -436,8 +436,31 @@
       <div id="scenario-manager-card" class="card" style="display:none;margin-bottom:20px;">
         <div class="card-header">
           <div class="card-header-title">场景库管理</div>
-          <button class="btn btn-primary btn-sm" onclick="openAddScenarioModal()">+ 新增场景</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="downloadScenarioTemplate()">↓ 下载模板</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleBulkImportPanel()">⇧ 批量导入</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddScenarioModal()">+ 新增场景</button>
+          </div>
         </div>
+
+        <!-- Bulk import panel (collapsed by default) -->
+        <div id="bulk-import-panel" style="display:none;padding:16px 20px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:220px;">
+              <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">上传 .zip 文件（包含 Excel 场景数据表 + 附件 CSV/XLSX）</div>
+              <input type="file" id="bulk-import-file" accept=".zip" style="font-size:13px;width:100%;" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding-top:22px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" id="bulk-import-overwrite" style="width:14px;height:14px;" />
+                覆盖同 sid 的已有场景
+              </label>
+              <button class="btn btn-primary btn-sm" onclick="bulkImportScenarios()" id="bulk-import-btn">开始导入</button>
+            </div>
+          </div>
+          <div id="bulk-import-result" style="margin-top:12px;font-size:13px;display:none;"></div>
+        </div>
+
         <div id="scenario-manager-list" style="padding:0 20px 16px;">
           <div style="color:var(--text-muted);font-size:13px;">加载中...</div>
         </div>
@@ -1609,6 +1632,83 @@
         </tbody>
       </table>
     `;
+  }
+
+  function downloadScenarioTemplate() {
+    const a = document.createElement('a');
+    a.href = `${API}/admin/test-scenarios/bulk-import/template`;
+    a.download = 'scenario_import_template.xlsx';
+    a.click();
+  }
+
+  function toggleBulkImportPanel() {
+    const panel = document.getElementById('bulk-import-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    if (panel.style.display === 'none') {
+      document.getElementById('bulk-import-result').style.display = 'none';
+    }
+  }
+
+  async function bulkImportScenarios() {
+    const fileInput = document.getElementById('bulk-import-file');
+    const overwrite = document.getElementById('bulk-import-overwrite').checked;
+    const btn = document.getElementById('bulk-import-btn');
+    const resultEl = document.getElementById('bulk-import-result');
+
+    if (!fileInput.files.length) {
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = '<span style="color:var(--red);">请先选择 .zip 文件</span>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '导入中...';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<span style="color:var(--text-muted);">正在上传并处理...</span>';
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('overwrite', overwrite ? 'true' : 'false');
+
+    try {
+      const res = await fetch(`${API}/admin/test-scenarios/bulk-import`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        resultEl.innerHTML = `<span style="color:var(--red);">导入失败：${data.detail || '未知错误'}</span>`;
+        return;
+      }
+
+      const { created = 0, updated = 0, skipped = 0, errors = [], total_processed = 0 } = data;
+      let html = `
+        <div style="display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap;">
+          <span style="color:var(--green,#2e7d32);">✓ 新增 ${created}</span>
+          <span style="color:var(--accent);">↻ 更新 ${updated}</span>
+          <span style="color:var(--text-muted);">— 跳过 ${skipped}</span>
+          <span style="color:var(--text-muted);font-size:12px;">共处理 ${total_processed} 行</span>
+        </div>
+      `;
+      if (errors.length) {
+        html += `<div style="color:var(--red);font-size:12px;"><b>错误 (${errors.length})：</b><ul style="margin:4px 0 0 16px;padding:0;">`;
+        errors.forEach(e => { html += `<li>${e}</li>`; });
+        html += '</ul></div>';
+      }
+      resultEl.innerHTML = html;
+
+      if (created > 0 || updated > 0) {
+        loadScenarioManagerList();
+        loadScenarioList();
+      }
+    } catch (err) {
+      resultEl.innerHTML = `<span style="color:var(--red);">网络错误：${err.message}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '开始导入';
+    }
   }
 
   let _allScenariosCache = [];
