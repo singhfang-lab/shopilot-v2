@@ -31,7 +31,8 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent / ".env")
 
-BASE_URL = "http://localhost:8081"
+_port = os.environ.get("PORT", "8081")
+BASE_URL = os.environ.get("TEST_BASE_URL", f"http://localhost:{_port}")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 JUDGE_MODEL = "claude-sonnet-4-6"
 
