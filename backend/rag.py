@@ -39,11 +39,18 @@ def _embed(text: str) -> list[float]:
 
 
 def _embed_gemini(text: str, api_key: str) -> list[float]:
-    import requests
+    import requests, time
     url = f"https://generativelanguage.googleapis.com/v1beta/{GEMINI_EMBED_MODEL}:embedContent?key={api_key}"
-    resp = requests.post(url, json={"model": GEMINI_EMBED_MODEL, "content": {"parts": [{"text": text}]}}, timeout=30)
-    resp.raise_for_status()
-    return resp.json()["embedding"]["values"]
+    retries = 3 if os.environ.get("LOCAL_DEV") else 1
+    for attempt in range(retries):
+        try:
+            resp = requests.post(url, json={"model": GEMINI_EMBED_MODEL, "content": {"parts": [{"text": text}]}}, timeout=15)
+            resp.raise_for_status()
+            return resp.json()["embedding"]["values"]
+        except Exception:
+            if attempt == retries - 1:
+                raise
+            time.sleep(1)
 
 
 def _embed_ollama(text: str) -> list[float]:
@@ -484,3 +491,34 @@ async def ingest_text(text: str, shop_id: str, source: str) -> int:
     import asyncio
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _chroma_add, chunks, source, shop_id)
+
+
+async def query_multi_async(question: str, shop_id: str | None, merchant_top_k: int = 3, platform_top_k: int = 2) -> dict[str, list[str]]:
+    """Async version of query_multi — avoids blocking the event loop."""
+    import asyncio
+    emb = await asyncio.to_thread(_embed, question)
+
+    if _use_pgvector():
+        pool = await _get_pg_pool()
+        results: dict[str, list[str]] = {}
+        for key, sid, k in [
+            ("merchant", _pg_shop_id(shop_id) if shop_id and shop_id.strip() else None, merchant_top_k),
+            ("platform", "knowledge", platform_top_k),
+        ]:
+            if sid is None:
+                results[key] = []
+                continue
+            cnt = await pool.fetchval("SELECT COUNT(*) FROM kb_chunks WHERE shop_id = $1", sid)
+            if not cnt:
+                results[key] = []
+                continue
+            emb_str = "[" + ",".join(str(x) for x in emb) + "]"
+            rows = await pool.fetch(
+                "SELECT content FROM kb_chunks WHERE shop_id = $1 ORDER BY embedding <=> $2::vector LIMIT $3",
+                sid, emb_str, min(k, cnt),
+            )
+            results[key] = [r["content"] for r in rows]
+        return results
+
+    # ChromaDB fallback
+    return await asyncio.to_thread(query_multi, question, shop_id, merchant_top_k, platform_top_k)

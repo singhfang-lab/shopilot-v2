@@ -38,9 +38,19 @@ async def lifespan(app: FastAPI):
     octools.scheduler.start()
     logger.info("APScheduler started")
     asyncio.create_task(_cleanup_data_sessions())
+    if os.environ.get("LOCAL_DEV"):
+        asyncio.create_task(_warmup_rag())
     yield
     octools.scheduler.shutdown(wait=False)
     logger.info("APScheduler stopped")
+
+
+async def _warmup_rag():
+    try:
+        await rag.query_multi_async("warmup", shop_id=None)
+        logger.info("RAG warmup complete")
+    except Exception as e:
+        logger.warning("RAG warmup failed: %s", e)
 
 
 app = FastAPI(title="USB Assistant API", lifespan=lifespan)
@@ -516,7 +526,13 @@ async def chat(req: ChatRequest, current_user=Depends(get_current_user_optional)
     with open(_dbg, "a") as _f:
         _f.write(f"[RAG] user={current_user.id if current_user else None} shop_id={shop_id!r}\n")
     try:
-        kb_results = rag.query_multi(message, shop_id=shop_id)
+        if os.environ.get("LOCAL_DEV"):
+            kb_results = await asyncio.wait_for(
+                rag.query_multi_async(message, shop_id=shop_id),
+                timeout=45
+            )
+        else:
+            kb_results = rag.query_multi(message, shop_id=shop_id)
         with open(_dbg, "a") as _f:
             _f.write(f"[RAG] merchant={len(kb_results.get('merchant') or [])} platform={len(kb_results.get('platform') or [])}\n")
         if kb_results.get("merchant"):
